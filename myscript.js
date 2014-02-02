@@ -58,15 +58,26 @@ Game.Init = function () {
     Game.workers.income = 5;
     Game.workers.basePrice = 50;
     Game.workers.price = 50;
+    Game.workers.salary = 0;
 
     Game.workers.Buy = function () {
-        if (Game.workers.price > Game.money) {
+        if (this.price > Game.money) {
             alert('Nie masz wystarczajaco pieniedzy');
         }
         else {
-            Game.Spend(Game.workers.price);
-            Game.workers.amount++;
+            Game.Spend(this.price);
+            this.amount++;
         }
+    }
+
+    Game.workers.Pay = function () {
+        if (Game.workers.salary >= Game.money) {
+            Game.money = 0;
+        }
+        else {
+            Game.money -= this.salary;
+        }
+        console.log('You have paid ' + Game.workers.salary);
     }
 
 
@@ -211,9 +222,12 @@ Game.Init = function () {
         workersPrice.id = 'workersPrice';
         var workersIncome = document.createElement('div');
         workersIncome.id = 'workersIncome';
+        var workersSalary = document.createElement('div');
+        workersSalary.id = 'workersSalary';
         workersTab.appendChild(workersAmount);
         workersTab.appendChild(workersPrice);
         workersTab.appendChild(workersIncome);
+        workersTab.appendChild(workersSalary);
     }
 
     Game.InitDrawing();
@@ -429,7 +443,8 @@ Game.Draw = function () {
     //WORKERS
     getId('workersAmount').innerHTML = 'Amount: ' + Game.workers.amount;
     getId('workersPrice').innerHTML = 'Price: ' + Beautify(Game.workers.price,0);
-    getId('workersIncome').innerHTML = 'Income: ' + Beautify(Game.workers.income,0);
+    getId('workersIncome').innerHTML = 'Income: ' + Beautify(Game.workers.income  * Game.incomeMultiplier / 100, 0);
+    getId('workersSalary').innerHTML = 'Salary to pay: ' + Beautify(Game.workers.salary, 0);
 
     //if (Math.floor(Game.tick % 5) == 0) Game.UpdateMenu();
 
@@ -447,7 +462,7 @@ Game.Logic = function () {
             accumulatedIncome += (Game.buildings[i].baseIncome * (Math.pow(1.05, Game.buildings[i].amount) - 1)) / (0.05);
             Game.buildings[i].cumulativeIncome = ((Game.buildings[i].baseIncome * (Math.pow(1.05, Game.buildings[i].amount) - 1)) / 0.05) * Game.incomeMultiplier / 100;
         }
-        accumulatedIncome += (Game.workers.baseIncome * (Math.pow(1.15, Game.workers.amount) - 1)) / (0.15)
+        accumulatedIncome += (Game.workers.baseIncome * (Math.pow(1.05, Game.workers.amount) - 1)) / (0.05)
 
         Game.moneyIncome = accumulatedIncome * Game.incomeMultiplier / 100;
     }
@@ -457,8 +472,9 @@ Game.Logic = function () {
         Game.buildings[i].income = Math.pow(1.05, Game.buildings[i].amount) * Game.buildings[i].baseIncome;
     }
 
-    Game.workers.price = Math.pow(1.10, Game.workers.amount) * Game.workers.basePrice;
-    Game.workers.income = Math.pow(1.10, Game.workers.amount) * Game.workers.baseIncome;
+    Game.workers.price = Math.pow(1.15, Game.workers.amount) * Game.workers.basePrice;
+    Game.workers.income = Math.pow(1.05, Game.workers.amount) * Game.workers.baseIncome;
+    Game.workers.salary = (Game.workers.income * Game.workers.amount);
 
     Game.UpdateIncome();
 
@@ -478,6 +494,7 @@ Game.Logic = function () {
     Game.buildingsAmount = buildingsAmount;
 
     if (Game.tick % (Game.fps * 60) == 0 && Game.tick > Game.fps * 10) Game.WriteSave();
+    if (Game.tick % (Game.fps * 300) == 0 && Game.tick > Game.fps * 299) Game.workers.Pay();
     Game.tick++;
 }
 
