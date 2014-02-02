@@ -1,0 +1,167 @@
+﻿
+body {
+    margin: 0;
+    font: normal 12px Verdana;
+    background: #6BCAE2;
+}
+
+* {
+	box-sizing: border-box;
+    -moz-box-sizing: border-box;
+	}
+
+#container {
+	width: 1000px;
+	margin: 0 auto;
+	}
+
+ul.tabs
+{
+	float: left;
+	margin: 0;
+	padding: 0;
+    list-style-type: none;
+	display: inline;
+}
+        
+
+        
+ul.tabs li a
+{
+	width: 200px;
+	display: block;
+    text-decoration: none;
+    position: relative;
+	padding: 20px 12px;
+    border: 1px solid black;
+    border-bottom-color: black;
+    color: #000;
+    background: #51A5BA;
+    border-radius: 3px 0 0 3px;
+}
+        
+ul.tabs li a:visited
+{
+    color: #000;
+}
+        
+ul.tabs li a:hover
+{
+    border: 1px solid black;
+    background: #21BEDE;
+}
+        
+ul.tabs li.selected a, ul.tabs li.selected a:hover
+{
+    position: relative;
+    font-weight: bold;
+    background: #21BEDE;
+    border: 1px solid black;
+}
+        
+        
+ul.tabs li.selected a:hover
+{
+    text-decoration: none;
+}
+     
+
+div.tabcontents
+{
+	float: right;
+	width: 800px;
+    border: 1px solid black; 
+	padding: 30px;
+    background: #21BEDE;
+    border-radius: 0 3px 3px 3px;
+}
+
+h2 {
+    margin: 0;
+    padding: 0;
+}
+
+.tabcontents h2 {
+    border-bottom: 1px solid black;
+    margin-bottom: 40px;
+}
+
+#inner {
+    margin-top: 20px;
+}
+
+.buildingItem {
+    border: 1px solid black;
+    margin: 3px 10px;
+    overflow: hidden;
+    background: #AFEAAA;
+}
+
+.buildingName, .buildingPrice, .buildingAmount {
+    margin: 5px;
+    position: relative;
+    top: 12px;
+}
+
+.buildingName {
+    font-weight: bold;
+}
+
+.buyBuilding, .sellBuilding {
+	font-family: Tahoma;
+    border-left: 1px solid black;
+    padding: 10px 15px;
+    font-size: 150%;
+    text-transform: uppercase;
+    display: inline;
+    float: right;
+    margin: 0;
+    width: 130px;
+    background: #71C42B;
+    text-align: center;
+}
+
+.buyBuilding, .sellBuilding {
+    cursor: pointer;
+}
+
+#upperbar {
+	margin-top: 20px;
+    border: 1px solid black;
+    border-radius: 3px 3px 3px 3px;
+    background: #51A5BA;
+}
+
+#money, #income {
+    font-size: 120%;
+    font-weight: bold;
+    margin: 20px;
+}
+
+.button {
+    margin: 10px;
+    border: 1px solid black;
+    padding: 10px;
+    background: #71C42B;
+    color: black;
+
+}
+
+.upgrade {
+    border: 1px solid black;
+    font-size: 11px;
+    padding: 7px;
+    margin: 10px;
+}
+
+.upgrade:hover {
+    cursor: pointer;
+    }
+
+.upgrade p  {
+    margin: 5px 3px;
+    }
+
+.stat {
+    margin: 5px 0;
+}
