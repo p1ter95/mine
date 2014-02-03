@@ -139,12 +139,16 @@ h2 {
 }
 
 .button {
+    float: left;
     margin: 10px;
     border: 1px solid black;
     padding: 10px;
     background: #71C42B;
     color: black;
+}
 
+.button:hover {
+    cursor: pointer;
 }
 
 .upgrade {
@@ -156,10 +160,6 @@ h2 {
 
 .upgrade:hover {
     cursor: pointer;
-    }
-
-.upgrade p  {
-    margin: 5px 3px;
     }
 
 .stat {

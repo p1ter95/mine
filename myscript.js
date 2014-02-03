@@ -56,9 +56,15 @@ Game.Init = function () {
     Game.workers.amount = 0;
     Game.workers.baseIncome = 5;
     Game.workers.income = 5;
+    Game.workers.cumulativeIncome = 0;
     Game.workers.basePrice = 50;
     Game.workers.price = 50;
     Game.workers.salary = 0;
+    Game.workers.paymentTime = 20;
+    Game.workers.apaymentTime = 20;
+    Game.workers.remainingTime = Game.workers.paymentTime;
+    Game.workers.salaryPaid = 0;
+
 
     Game.workers.Buy = function () {
         if (this.price > Game.money) {
@@ -70,12 +76,24 @@ Game.Init = function () {
         }
     }
 
+    Game.workers.Sell = function () {
+        if (this.amount <= 0) {
+            alert('Nie mozesz juz wiecej sprzedac robotnikow');
+        }
+        else {
+            Game.GetMoney(this.price);
+            this.amount--;
+        }
+    }
+
+
     Game.workers.Pay = function () {
         if (Game.workers.salary >= Game.money) {
             Game.money = 0;
         }
         else {
             Game.money -= this.salary;
+            Game.workers.salaryPaid += this.salary;
         }
         console.log('You have paid ' + Game.workers.salary);
     }
@@ -89,6 +107,8 @@ Game.Init = function () {
     Game.Spend = function (howmuch) {
         Game.money -= howmuch;
     }
+
+    //CONTENT
 
     Game.buildings = [];
     Game.buildings.push({ name: "Łopata", basePrice: 20, price: 20, baseIncome: 1, income: 1, amount: 0, cumulativeIncome: 0 });
@@ -129,7 +149,7 @@ Game.Init = function () {
     /*=================================================
     NEW DRAWING SYSTEM TEST
     ==================================================*/
-    Game.InitDrawing = function () {
+    Game.Draw = function () {
         //BUILDINGS
         var miningTab = getId('view1');
 
@@ -142,19 +162,16 @@ Game.Init = function () {
             var buildingName = document.createElement('span');
             buildingName.id = 'buildingName' + (i + 1);
             buildingName.className = 'buildingName';
-           // buildingName.appendChild(document.createTextNode(Game.buildings[i].name));
             buildingItem.appendChild(buildingName);
 
             var buildingPrice = document.createElement('span');
             buildingPrice.id = 'buildingPrice' + (i + 1);
             buildingPrice.className = 'buildingPrice';
-            //buildingPrice.appendChild(document.createTextNode('Cena: ' + Beautify(Game.buildings[i].price, 0)));
             buildingItem.appendChild(buildingPrice);
 
             var buildingAmount = document.createElement('span');
             buildingAmount.id = 'buildingAmount' + (i + 1);
             buildingAmount.className = 'buildingAmount';
-           // buildingAmount.appendChild(document.createTextNode('Ilosc: ' + Game.buildings[i].amount));
             buildingItem.appendChild(buildingAmount);
 
             var buyBuilding = document.createElement('div');
@@ -168,7 +185,6 @@ Game.Init = function () {
             sellBuilding.className = 'sellBuilding';
             sellBuilding.appendChild(document.createTextNode('SELL'));
             buildingItem.appendChild(sellBuilding);
-
         }
 
         //UPGRADES
@@ -210,12 +226,13 @@ Game.Init = function () {
         optionsTab.appendChild(Game.CreateButton('btnExport', 'button', 'Game.ExportSave()', 'Export Game'));
         optionsTab.appendChild(Game.CreateButton('btnImport', 'button', 'Game.ImportSave()', 'Import Game'));
         optionsTab.appendChild(Game.CreateButton('btnReset', 'button', 'Game.Reset()', 'Reset'));
-      
+
         //WORKERS
 
         var workersTab = getId('view3');
 
-        workersTab.appendChild(Game.CreateButton('addWorker', 'button', 'Game.workers.Buy()', 'Buy a worker'));
+        workersTab.appendChild(Game.CreateButton('buyWorker', 'button', 'Game.workers.Buy()', 'Buy a worker'));
+        workersTab.appendChild(Game.CreateButton('sellWorker', 'button', 'Game.workers.Sell()', 'Sell a worker'));
         var workersAmount = document.createElement('div');
         workersAmount.id = 'workersAmount';
         var workersPrice = document.createElement('div');
@@ -224,13 +241,53 @@ Game.Init = function () {
         workersIncome.id = 'workersIncome';
         var workersSalary = document.createElement('div');
         workersSalary.id = 'workersSalary';
+        var time = document.createElement('div');
+        time.id = 'time';
         workersTab.appendChild(workersAmount);
         workersTab.appendChild(workersPrice);
         workersTab.appendChild(workersIncome);
         workersTab.appendChild(workersSalary);
+        workersTab.appendChild(time);
+
+        //STATISTICS
+
+        var statisticsTab = getId('view4');
+
+        var moneyEarned = document.createElement('div');
+        moneyEarned.id = 'moneyEarned';
+        moneyEarned.className = 'stat';
+
+        var incomePerMinute = document.createElement('div');
+        incomePerMinute.id = 'incomePerMinute';
+        incomePerMinute.className = 'stat';
+
+        var incomeMultiplier = document.createElement('div');
+        incomeMultiplier.id = 'incomeMultiplier';
+        incomeMultiplier.className = 'stat';
+
+        var buildingsOwned = document.createElement('div');
+        buildingsOwned.id = 'buildingsOwned';
+        buildingsOwned.className = 'stat';
+
+        var salaryPaid = document.createElement('div');
+        salaryPaid.id = 'salaryPaid';
+        salaryPaid.className = 'stat';
+
+        statisticsTab.appendChild(moneyEarned);
+        statisticsTab.appendChild(incomePerMinute);
+        statisticsTab.appendChild(incomeMultiplier);
+        statisticsTab.appendChild(buildingsOwned);
+        statisticsTab.appendChild(salaryPaid);
+
+        for (var i = 0; i < Game.buildings.length; i++) {
+            var cumulative = document.createElement('div');
+            cumulative.id = 'cumulative' + (i + 1);
+            cumulative.className = 'stat';
+            statisticsTab.appendChild(cumulative);
+        }
     }
 
-    Game.InitDrawing();
+    Game.Draw();
 
     Game.BuildingsListener = function (i) {
         AddEvent(getId('buyBuilding'.concat(i + 1)), 'click',
@@ -241,7 +298,6 @@ Game.Init = function () {
                 else {
                     Game.Spend(Game.buildings[i].price);
                     Game.buildings[i].amount++;
-                    //Game.buildings[i].price = Math.pow(1.15, Game.buildings[i].amount) * Game.buildings[i].basePrice;
 
                 }
             }
@@ -254,8 +310,6 @@ Game.Init = function () {
                 else {
                     Game.GetMoney(Game.buildings[i].price);
                     Game.buildings[i].amount--;
-                    //Game.buildings[i].price = Math.pow(1.15, Game.buildings[i].amount) * Game.buildings[i].basePrice;
-
                 }
             }
             );
@@ -290,6 +344,8 @@ Game.Init = function () {
         str += Game.moneyIncome + '|';
         str += Game.incomeMultiplier + '|';
         str += Game.buildingsAmount + '|';
+        str += Game.workers.amount + '|';
+        str += Game.workers.salaryPaid + '|';
 
         for (var i = 0; i < Game.buildings.length; i++) {
             str += Game.buildings[i].price + '|';
@@ -311,7 +367,7 @@ Game.Init = function () {
         }
         var now = new Date();
         now.setFullYear(now.getFullYear() + 5);
-        str = Game.name + '=' + str + 'expires=' + now.toUTCString() + ';';
+        str = Game.name + '=' + str + '; expires=' + now.toUTCString() + ';';
         document.cookie = str;
         if (exporting) {
             return str;
@@ -332,10 +388,9 @@ Game.Init = function () {
         var str = '';
         if (data) {
             str = data.split(Game.name + '=');
-            
+
         }
-        else if (document.cookie.indexOf(Game.name) >= 0) 
-        {
+        else if (document.cookie.indexOf(Game.name) >= 0) {
             str = document.cookie.split(Game.name + '=');
         }
         if (str != '') {
@@ -346,8 +401,10 @@ Game.Init = function () {
             Game.moneyIncome = parseInt(save[2]);
             Game.incomeMultiplier = parseInt(save[3]);
             Game.buildingsAmount = parseInt(save[4]);
+            Game.workers.amount = parseInt(save[5]);
+            Game.workers.salaryPaid = parseInt(save[6]);
 
-            var temp = 5;
+            var temp = 7;
             var counter = 0;
             for (var i = 0; i < Game.buildings.length; i++) {
                 Game.buildings[i].price = parseInt(save[temp + counter]);
@@ -380,6 +437,8 @@ Game.Init = function () {
         Game.moneyIncome = 0;
         Game.incomeMultiplier = 100;
         Game.buildingsAmount = 0;
+        Game.workers.amount = 0;
+        Game.workers.salaryPaid = 0;
 
         for (var i = 0; i < Game.buildings.length; i++) {
             Game.buildings[i].price = Game.buildings[i].basePrice;
@@ -401,9 +460,9 @@ Game.Init = function () {
 DRAWING
 ==================================================*/
 
-Game.Draw = function () {
+Game.DrawUpdate = function () {
 
-    //UPPER BAR
+    //UPPER BAR - NEED TO FIX THIS
     var money = getId('money');
     money.innerHTML = "Current money: $" + Beautify(Game.money, 0);
     var income = getId('income');
@@ -411,9 +470,9 @@ Game.Draw = function () {
 
     //BUILDINGS
     for (var i = 0; i < Game.buildings.length; i++) {
-       getId('buildingName'.concat(i + 1)).innerHTML = Game.buildings[i].name;
-       getId('buildingPrice'.concat(i + 1)).innerHTML = 'Cena: ' + Beautify(Game.buildings[i].price,0);
-       getId('buildingAmount'.concat(i + 1)).innerHTML = 'Ilosc: ' + Game.buildings[i].amount;
+        getId('buildingName'.concat(i + 1)).innerHTML = Game.buildings[i].name;
+        getId('buildingPrice'.concat(i + 1)).innerHTML = 'Price: ' + Beautify(Game.buildings[i].price, 0);
+        getId('buildingAmount'.concat(i + 1)).innerHTML = 'Amount: ' + Game.buildings[i].amount;
     }
 
     for (var i = 0; i < Game.upgrades.length; i++) {
@@ -424,30 +483,42 @@ Game.Draw = function () {
         }
         if (Game.upgrades[i].unlocked == true) getId('upgrade'.concat(i + 1)).style.background = '#50FF50'; //green
 
-        getId('upgradeName'.concat(i + 1)).innerHTML = 'Nazwa: ' + Game.upgrades[i].name;
+        getId('upgradeName'.concat(i + 1)).innerHTML = 'Name: ' + Game.upgrades[i].name;
         getId('upgradeDesc'.concat(i + 1)).innerHTML = 'Description: ' + Game.upgrades[i].desc;
         getId('upgradePrice'.concat(i + 1)).innerHTML = 'Price: $' + Beautify(Game.upgrades[i].price, 0);
     }
-
 
     //STATISTICS
     getId('moneyEarned').innerHTML = '<b>Money earned during entire gameplay:</b> $' + Beautify(Game.moneyEarned);
     getId('incomePerMinute').innerHTML = '<b>Income per minute:</b> $' + Beautify(Game.moneyIncome * 60);
     getId('incomeMultiplier').innerHTML = '<b>Income multiplier:</b> ' + Beautify(Game.incomeMultiplier) + '%';
-    getId('ownedBuildings').innerHTML = '<b>Owned buildings in total:</b> ' + Beautify(Game.buildingsAmount);
+    getId('buildingsOwned').innerHTML = '<b>Owned buildings in total:</b> ' + Beautify(Game.buildingsAmount);
+    getId('salaryPaid').innerHTML = '<b>Total salary paid to workers:</b> $' + Beautify(Game.workers.salaryPaid);
     for (var i = 0; i < Game.buildings.length; i++) {
-        getId('cumulative'.concat(i + 1)).innerHTML = '<b>Income from ' + Game.buildings[i].name + ':</b> $' + Beautify(Game.buildings[i].cumulativeIncome);
+        getId('cumulative'.concat(i + 1)).innerHTML = '<b>Cumulative income from ' + Game.buildings[i].name + ':</b> $' + Beautify(Game.buildings[i].cumulativeIncome);
     }
-
 
     //WORKERS
     getId('workersAmount').innerHTML = 'Amount: ' + Game.workers.amount;
-    getId('workersPrice').innerHTML = 'Price: ' + Beautify(Game.workers.price,0);
-    getId('workersIncome').innerHTML = 'Income: ' + Beautify(Game.workers.income  * Game.incomeMultiplier / 100, 0);
-    getId('workersSalary').innerHTML = 'Salary to pay: ' + Beautify(Game.workers.salary, 0);
+    getId('workersPrice').innerHTML = 'Price: $' + Beautify(Game.workers.price, 0);
+    getId('workersIncome').innerHTML = 'Cumulative income: $' + Beautify(Game.workers.cumulativeIncome);
+    getId('workersSalary').innerHTML = 'Salary to pay: $' + Beautify(Game.workers.salary, 0);
 
-    //if (Math.floor(Game.tick % 5) == 0) Game.UpdateMenu();
 
+    //HAVE TO COMPLETELY REWORK THIS
+
+    if (Game.tick % (Game.fps) == 0) Game.workers.remainingTime--;
+    if (Game.workers.remainingTime == 0) {
+        Game.workers.remainingTime = Game.workers.apaymentTime;
+        console.log('test');
+    }
+
+    if (Game.workers.paymentTime != Game.workers.apaymentTime) {
+        Game.workers.remainingTime = Game.workers.paymentTime;
+        Game.workers.apaymentTime = Game.workers.paymentTime;
+    }
+
+    getId('time').innerHTML = 'Remaining time to payout: ' + parseInt(Game.workers.remainingTime / 60) + ':' + parseInt(Game.workers.remainingTime % 60);
 }
 
 /*=================================================
@@ -472,11 +543,15 @@ Game.Logic = function () {
         Game.buildings[i].income = Math.pow(1.05, Game.buildings[i].amount) * Game.buildings[i].baseIncome;
     }
 
+    Game.UpdateIncome();
+
+    //WORKERS RELATED
+
     Game.workers.price = Math.pow(1.15, Game.workers.amount) * Game.workers.basePrice;
     Game.workers.income = Math.pow(1.05, Game.workers.amount) * Game.workers.baseIncome;
-    Game.workers.salary = (Game.workers.income * Game.workers.amount);
+    Game.workers.cumulativeIncome = ((Game.workers.baseIncome * (Math.pow(1.05, Game.workers.amount) - 1)) / 0.05) * Game.incomeMultiplier / 100;
 
-    Game.UpdateIncome();
+    Game.workers.salary = Game.workers.cumulativeIncome * 5;
 
     Game.GetMoney(Game.moneyIncome / Game.fps);
 
@@ -491,10 +566,11 @@ Game.Logic = function () {
     for (var i = 0; i < Game.buildings.length; i++) {
         buildingsAmount += Game.buildings[i].amount;
     }
+
     Game.buildingsAmount = buildingsAmount;
 
     if (Game.tick % (Game.fps * 60) == 0 && Game.tick > Game.fps * 10) Game.WriteSave();
-    if (Game.tick % (Game.fps * 300) == 0 && Game.tick > Game.fps * 299) Game.workers.Pay();
+    if (Game.tick % (Game.fps * Game.workers.paymentTime) == 0 && Game.tick > Game.fps * Game.workers.paymentTime - 1) Game.workers.Pay();
     Game.tick++;
 }
 
@@ -504,7 +580,7 @@ THE MAIN LOOP
 
 Game.Loop = function () {
     Game.Logic();
-    Game.Draw();
+    Game.DrawUpdate();
 
     setTimeout(Game.Loop, 1000 / Game.fps);
 }
