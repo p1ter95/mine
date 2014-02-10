@@ -22,6 +22,7 @@ ul.tabs
 	padding: 0;
     list-style-type: none;
 	display: inline;
+    box-shadow: 2px 2px 30px 1px rgba(0, 0, 0, 0.5);
 }
         
 
@@ -55,7 +56,8 @@ ul.tabs li.selected a, ul.tabs li.selected a:hover
 {
     position: relative;
     font-weight: bold;
-    background: #21BEDE;
+    /*background: #21BEDE*/
+    background: linear-gradient(to bottom, rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%);
     border: 1px solid black;
 }
         
@@ -71,19 +73,23 @@ div.tabcontents
 	float: right;
 	width: 800px;
     border: 1px solid black; 
-	padding: 30px;
+	/*padding: 30px;*/
     background: #21BEDE;
     border-radius: 0 3px 3px 3px;
+    box-shadow: 2px 2px 30px 1px rgba(0, 0, 0, 0.5);
 }
 
-h2 {
-    margin: 0;
-    padding: 0;
+.content {
+    padding: 30px;
+    overflow: auto;
 }
 
 .tabcontents h2 {
+    margin: 0;
+    padding: 16px;
+    background: linear-gradient(to bottom, rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%);
     border-bottom: 1px solid black;
-    margin-bottom: 40px;
+    margin: 0;
 }
 
 #inner {
@@ -117,7 +123,7 @@ h2 {
     float: right;
     margin: 0;
     width: 130px;
-    background: #71C42B;
+    background: linear-gradient(to bottom, rgba(255,168,76,1) 0%,rgba(255,123,13,1) 100%);
     text-align: center;
 }
 
@@ -130,12 +136,14 @@ h2 {
     border: 1px solid black;
     border-radius: 3px 3px 3px 3px;
     background: #51A5BA;
+    box-shadow: 2px 2px 30px 1px rgba(0, 0, 0, 0.5);
 }
 
 #money, #income {
     font-size: 120%;
     font-weight: bold;
     margin: 20px;
+    text-shadow: 0 0 10px white;
 }
 
 .button {
@@ -143,8 +151,9 @@ h2 {
     margin: 10px;
     border: 1px solid black;
     padding: 10px;
-    background: #71C42B;
+    background: linear-gradient(to bottom, rgba(255,168,76,1) 0%,rgba(255,123,13,1) 100%);
     color: black;
+    border-radius: 3px 3px 3px 3px;
 }
 
 .button:hover {
@@ -155,7 +164,7 @@ h2 {
     border: 1px solid black;
     font-size: 11px;
     padding: 7px;
-    margin: 10px;
+    margin: 10px 10px;
 }
 
 .upgrade:hover {
@@ -163,5 +172,21 @@ h2 {
     }
 
 .stat {
-    margin: 5px 0;
+    margin: 7px 0;
+}
+
+.achievement {
+    background: #FFCC00;
+    border: 1px solid black;
+    font-size: 11px;
+    padding: 7px;
+    margin: 10px;
+}
+
+input[type=text] {
+    border-radius: 3px;
+    margin-top: 10px;
+    font: 17px Verdana;
+    padding: 5px;
+    border: 1px solid black;
 }

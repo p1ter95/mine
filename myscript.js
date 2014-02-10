@@ -36,6 +36,11 @@ function Beautify(what, floats)//Turns 9999999 into 9,999,999
     return str;
 }
 
+function getRandom(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+
 /*=================================================
 THE GAME
 ==================================================*/
@@ -51,20 +56,32 @@ Game.Init = function () {
     Game.moneyIncome = 0;
     Game.incomeMultiplier = 100;
     Game.buildingsAmount = 0;
+    Game.upgradesUnlocked = 0;
 
-    Game.workers = [];
+    Game.bonus = false;
+    Game.bonusTime = 30;
+    Game.bonusTimeRemaining = Game.bonusTime;
+    Game.bonusMultiplier = 10;
+    Game.bonusCount = 0;
+
+    Game.workers = {};
     Game.workers.amount = 0;
-    Game.workers.baseIncome = 5;
-    Game.workers.income = 5;
+    Game.workers.baseIncome = 7;
+    Game.workers.income = 7;
     Game.workers.cumulativeIncome = 0;
+    Game.workers.cumulativeGains = 0;
     Game.workers.basePrice = 50;
     Game.workers.price = 50;
     Game.workers.salary = 0;
     Game.workers.paymentTime = 20;
-    Game.workers.apaymentTime = 20;
     Game.workers.remainingTime = Game.workers.paymentTime;
     Game.workers.salaryPaid = 0;
 
+    Game.bank = {};
+    Game.bank.storedMoney = 0;
+    Game.bank.moneyRate = 2;
+
+    //WORKERS RELATED
 
     Game.workers.Buy = function () {
         if (this.price > Game.money) {
@@ -86,18 +103,38 @@ Game.Init = function () {
         }
     }
 
-
     Game.workers.Pay = function () {
         if (Game.workers.salary >= Game.money) {
             Game.money = 0;
+            this.salaryPaid += this.salary - Game.money;
         }
         else {
             Game.money -= this.salary;
-            Game.workers.salaryPaid += this.salary;
+            this.salaryPaid += this.salary;
         }
         console.log('You have paid ' + Game.workers.salary);
     }
 
+    //BANK RELATED
+    Game.bank.Deposit = function (amount) {
+        if (amount > Game.money) {
+            alert('Nie masz wystarczajaco pieniedzy');
+        }
+        else {
+            this.storedMoney += amount;
+            Game.Spend(amount);
+        }
+    }
+
+    Game.bank.Withdraw = function (amount) {
+        if (amount > this.storedMoney) {
+            alert('Nie masz tylu pieniedzy w banku');
+        }
+        else {
+            this.storedMoney -= amount;
+            Game.GetMoney(amount);
+        }
+    }
 
     Game.GetMoney = function (howmuch) {
         Game.money += howmuch;
@@ -110,48 +147,157 @@ Game.Init = function () {
 
     //CONTENT
 
+    Game.Building = function (name, basePrice, baseIncome) {
+        this.name = name;
+        this.basePrice = basePrice;
+        this.price = this.basePrice;
+        this.baseIncome = baseIncome;
+        this.income = this.baseIncome;
+        this.amount = 0;
+        this.cumulativeIncome = 0;
+        this.cumulativeGains = 0;
+    }
+
+    Game.Upgrade = function (name, desc, price, effect) {
+        this.name = name;
+        this.desc = desc;
+        this.unlocked = false;
+        this.price = price;
+        this.used = false;
+        this.effect = effect;
+    }
+
+    Game.Achievement = function (name, desc) {
+        this.name = name;
+        this.desc = desc;
+        this.unlocked = false;
+    }
+
     Game.buildings = [];
-    Game.buildings.push({ name: "Łopata", basePrice: 20, price: 20, baseIncome: 1, income: 1, amount: 0, cumulativeIncome: 0 });
-    Game.buildings.push({ name: "Kopalnia", basePrice: 50, price: 50, baseIncome: 3, income: 3, amount: 0, cumulativeIncome: 0 });
-    Game.buildings.push({ name: "Ulepszona kopalnia", basePrice: 100, price: 100, baseIncome: 5, income: 5, amount: 0, cumulativeIncome: 0 });
+    Game.buildings.push(new Game.Building('Łopata', 20, 1));
+    Game.buildings.push(new Game.Building('Kopalnia', 50, 3));
+    Game.buildings.push(new Game.Building('Ulepszona kopalnia', 100, 5));
 
     Game.upgrades = [];
-    Game.upgrades.push({
-        name: 'Simple Enhancer #1', desc: 'Increases the income multiplier by 20%', unlocked: false, price: 15000, effect:
+    Game.upgrades.push(new Game.Upgrade('Simple Enhancer #1', 'Increases the income multiplier by <b>10%</b>', 10000,
+            function () {
+                Game.incomeMultiplier += 10;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Simple Enhancer #2', 'Increases the income multiplier by <b>10%</b>', 50000,
+            function () {
+                Game.incomeMultiplier += 10;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Simple Enhancer #3', 'Increases the income multiplier by <b>10%</b>', 100000,
+            function () {
+                Game.incomeMultiplier += 10;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Booster #1', 'Increases the income multiplier by <b>20%</b>', 300000,
             function () {
                 Game.incomeMultiplier += 20;
-            }, used: false
+            }));
 
-    });
-    Game.upgrades.push({
-        name: 'Simple Enhancer #2', desc: 'Increases the income multiplier by 25%', unlocked: false, price: 50000, effect:
+    Game.upgrades.push(new Game.Upgrade('Booster #2', 'Increases the income multiplier by <b>20%</b>', 500000,
             function () {
-                Game.incomeMultiplier += 25;
-            }, used: false
+                Game.incomeMultiplier += 20;
+            }));
 
-    });
-    Game.upgrades.push({
-        name: 'Enhancer #3', desc: 'Increases the income multiplier by 35%', unlocked: false, price: 100000, effect:
+    Game.upgrades.push(new Game.Upgrade('Booster #3', 'Increases the income multiplier by <b>20%</b>', 1000000,
             function () {
-                Game.incomeMultiplier += 35;
-            }, used: false
+                Game.incomeMultiplier += 20;
+            }));
 
-    });
+    Game.upgrades.push(new Game.Upgrade('Augmented booster #1', 'Increases the income multiplier by <b>30%</b>', 5000000,
+            function () {
+                Game.incomeMultiplier += 30;
+            }));
 
-    Game.upgrades.push({
-        name: 'Superior Enhancer #4', desc: 'Increases the income multiplier by 50%', unlocked: false, price: 200000, effect:
+    Game.upgrades.push(new Game.Upgrade('Augmented booster #2', 'Increases the income multiplier by <b>30%</b>', 25000000, 
+            function () {
+                Game.incomeMultiplier += 30;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Augmented booster #3', 'Increases the income multiplier by <b>30%</b>', 50000000, 
+            function () {
+                Game.incomeMultiplier += 30;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Superior booster #1', 'Increases the income multiplier by <b>40%</b>', 100000000, 
+            function () {
+                Game.incomeMultiplier += 40;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Superior booster #2', 'Increases the income multiplier by <b>40%</b>', 150000000, 
+            function () {
+                Game.incomeMultiplier += 40;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Superior booster #3', 'Increases the income multiplier by <b>40%</b>', 200000000, 
+            function () {
+                Game.incomeMultiplier += 40;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Advanced booster #1', 'Increases the income multiplier by <b>45%</b>', 500000000, 
+            function () {
+                Game.incomeMultiplier += 45;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Advanced booster #2', 'Increases the income multiplier by <b>45%</b>', 1000000000, 
+            function () {
+                Game.incomeMultiplier += 45;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Advanced booster #3', 'Increases the income multiplier by <b>45%</b>', 1500000000,
+            function () {
+                Game.incomeMultiplier += 45;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Even more advanced booster #1', 'Increases the income multiplier by <b>50%</b>', 2000000000,
             function () {
                 Game.incomeMultiplier += 50;
-            }, used: false
+            }));
 
-    });
+    Game.upgrades.push(new Game.Upgrade('Even more advanced booster #2', 'Increases the income multiplier by <b>50%</b>', 5000000000, 
+            function () {
+                Game.incomeMultiplier += 50;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Even more advanced booster #3', 'Increases the income multiplier by <b>50%</b>', 10000000000, 
+            function () {
+                Game.incomeMultiplier += 50;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade('Bonus booster', 'Increases the bonus multiplier by <b>3 times</b>', 3000000,
+            function () {
+                Game.bonusMultiplier *= 3;
+            }));
+
+    Game.achievements = [];
+
+    Game.achievements.push(new Game.Achievement('Little business', 'Earn <b>$10,000</b>'));
+    Game.achievements.push(new Game.Achievement('Getting serious', 'Earn <b>$100,000</b>'));
+    Game.achievements.push(new Game.Achievement('Millionaire', 'Earn <b>$1,000,000</b>'));
+    Game.achievements.push(new Game.Achievement('Billionaire', 'Earn <b>$1,000,000,000</b>'));
+    Game.achievements.push(new Game.Achievement('Enhancer', 'Get <b>all the upgrades</b>'));
+    Game.achievements.push(new Game.Achievement('Big pockets', 'Have <b>$1,000,000</b> on hand'));
+    Game.achievements.push(new Game.Achievement('Reset', '<b>Reset</b> game once'));
 
     /*=================================================
     NEW DRAWING SYSTEM TEST
     ==================================================*/
     Game.Draw = function () {
+        Game.CreateButton = function (id, classname, name) {
+            var button = document.createElement('a');
+            button.id = id;
+            button.className = classname;
+            button.appendChild(document.createTextNode(name));
+            return button;
+        }
+
         //BUILDINGS
-        var miningTab = getId('view1');
+        var miningTab = getId('mine');
 
         for (var i = 0; i < Game.buildings.length; i++) {
             var buildingItem = document.createElement('div');
@@ -188,7 +334,11 @@ Game.Init = function () {
         }
 
         //UPGRADES
-        var upgradesTab = getId('view2');
+        var upgradesTab = getId('upgrades');
+
+        var upgradesUnlocked = document.createElement('span')
+        upgradesUnlocked.id = 'upgradesUnlocked';
+        upgradesTab.appendChild(upgradesUnlocked);
 
         for (var i = 0; i < Game.upgrades.length; i++) {
             var upgrade = document.createElement('div');
@@ -209,30 +359,12 @@ Game.Init = function () {
             upgrade.appendChild(upgradePrice);
         }
 
-        //OPTIONS
-
-        Game.CreateButton = function (id, classname, callback, name) {
-            var button = document.createElement('a');
-            button.id = id;
-            button.className = classname;
-            button.appendChild(document.createTextNode(name));
-            button.setAttribute('onclick', callback);
-            return button;
-        }
-
-        var optionsTab = getId('view5');
-
-        optionsTab.appendChild(Game.CreateButton('btnSaveGame', 'button', 'Game.WriteSave()', 'Save Game'));
-        optionsTab.appendChild(Game.CreateButton('btnExport', 'button', 'Game.ExportSave()', 'Export Game'));
-        optionsTab.appendChild(Game.CreateButton('btnImport', 'button', 'Game.ImportSave()', 'Import Game'));
-        optionsTab.appendChild(Game.CreateButton('btnReset', 'button', 'Game.Reset()', 'Reset'));
-
         //WORKERS
 
-        var workersTab = getId('view3');
+        var workersTab = getId('workers');
 
-        workersTab.appendChild(Game.CreateButton('buyWorker', 'button', 'Game.workers.Buy()', 'Buy a worker'));
-        workersTab.appendChild(Game.CreateButton('sellWorker', 'button', 'Game.workers.Sell()', 'Sell a worker'));
+        workersTab.appendChild(Game.CreateButton('buyWorker', 'button', 'Buy a worker'));
+        workersTab.appendChild(Game.CreateButton('sellWorker', 'button', 'Sell a worker'));
         var workersAmount = document.createElement('div');
         workersAmount.id = 'workersAmount';
         var workersPrice = document.createElement('div');
@@ -249,9 +381,30 @@ Game.Init = function () {
         workersTab.appendChild(workersSalary);
         workersTab.appendChild(time);
 
+        //BANK
+
+        var bankTab = getId('bank');
+
+        var storedMoney = document.createElement('div');
+        storedMoney.id = 'storedMoney';
+        var moneyRate = document.createElement('div');
+        moneyRate.id = 'moneyRate';
+        var bankInput = document.createElement('input');
+        bankInput.setAttribute('type', 'text');
+        bankInput.id = 'bankInput';
+
+        bankTab.appendChild(storedMoney);
+        bankTab.appendChild(moneyRate);
+        bankTab.appendChild(bankInput);
+        bankTab.appendChild(Game.CreateButton('depositall', 'button', 'Deposit all money'));
+        bankTab.appendChild(Game.CreateButton('withdrawall', 'button', 'Withdraw all money'));
+        bankTab.appendChild(Game.CreateButton('deposit', 'button', 'Deposit'));
+        bankTab.appendChild(Game.CreateButton('withdraw', 'button', 'Withdraw'));
+
+
         //STATISTICS
 
-        var statisticsTab = getId('view4');
+        var statisticsTab = getId('statistics');
 
         var moneyEarned = document.createElement('div');
         moneyEarned.id = 'moneyEarned';
@@ -273,22 +426,228 @@ Game.Init = function () {
         salaryPaid.id = 'salaryPaid';
         salaryPaid.className = 'stat';
 
+        var workersGains = document.createElement('div');
+        workersGains.id = 'workersGains';
+        workersGains.className = 'stat';
+
         statisticsTab.appendChild(moneyEarned);
         statisticsTab.appendChild(incomePerMinute);
         statisticsTab.appendChild(incomeMultiplier);
         statisticsTab.appendChild(buildingsOwned);
         statisticsTab.appendChild(salaryPaid);
+        statisticsTab.appendChild(workersGains);
 
         for (var i = 0; i < Game.buildings.length; i++) {
             var cumulative = document.createElement('div');
             cumulative.id = 'cumulative' + (i + 1);
             cumulative.className = 'stat';
+            var cumulativeGains = document.createElement('div');
+            cumulativeGains.id = 'cumulativeGains' + (i + 1);
+            cumulativeGains.className = 'stat';
             statisticsTab.appendChild(cumulative);
+            statisticsTab.appendChild(cumulativeGains);
         }
+
+        //ACHIEVEMENTS
+
+        var achievementsTab = getId('achievements');
+
+        for (var i = 0; i < Game.achievements.length; i++) {
+            var achievement = document.createElement('div');
+            achievement.id = 'achievement' + (i + 1);
+            achievement.className = 'achievement';
+            achievement.style.display = 'none';
+            achievementsTab.appendChild(achievement);
+
+            var achievementName = document.createElement('div');
+            achievementName.id = 'achievementName' + (i + 1);
+            achievement.appendChild(achievementName);
+
+            var achievementDesc = document.createElement('div');
+            achievementDesc.id = 'achievementDesc' + (i + 1);
+            achievement.appendChild(achievementDesc);
+
+        }
+
+        //OPTIONS
+
+        var optionsTab = getId('options');
+
+        optionsTab.appendChild(Game.CreateButton('btnSaveGame', 'button', 'Save Game'));
+        optionsTab.appendChild(Game.CreateButton('btnExport', 'button', 'Export Game'));
+        optionsTab.appendChild(Game.CreateButton('btnImport', 'button', 'Import Game'));
+        optionsTab.appendChild(Game.CreateButton('btnReset', 'button', 'Reset'));
     }
 
     Game.Draw();
 
+    
+    Game.UnlockAchievement = function (achievementName) {
+        for (var i = 0; i < Game.achievements.length; i++) {
+            if (Game.achievements[i].name == achievementName && !Game.achievements[i].unlocked) {
+                Game.achievements[i].unlocked = true;
+            }
+        }
+    }
+
+    Game.WriteSave = function (exporting) {
+        var str = '';
+        str += Game.moneyEarned + '|';
+        str += Game.money + '|';
+        str += Game.moneyIncome + '|';
+        str += Game.incomeMultiplier + '|';
+        str += Game.buildingsAmount + '|';
+        str += Game.workers.amount + '|';
+        str += Game.workers.salaryPaid + '|';
+        str += Game.workers.cumulativeGains + '|';
+        str += Game.bonusMultiplier + '|';
+        str += Game.bonusCount + '|';
+
+        for (var i = 0; i < Game.buildings.length; i++) {
+            str += Game.buildings[i].price + '|';
+            str += Game.buildings[i].income + '|';
+            str += Game.buildings[i].amount + '|';
+            str += Game.buildings[i].cumulativeGains + '|';
+        }
+        for (var i = 0; i < Game.upgrades.length; i++) {
+            if (Game.upgrades[i].unlocked == true) {
+                str += '1|';
+            }
+            else {
+                str += '0|';
+            }
+
+            if (Game.upgrades[i].used == true)
+                str += '1|';
+            else
+                str += '0|';
+        }
+        for (var i = 0; i < Game.achievements.length; i++) {
+            if (Game.achievements[i].unlocked == true) {
+                str += '1|';
+            }
+            else {
+                str += '0|';
+            }
+        }
+        var now = new Date();
+        now.setFullYear(now.getFullYear() + 5);
+        str = Game.name + '=' + str + '; expires=' + now.toUTCString() + ';';
+        document.cookie = str;
+        if (exporting) {
+            return str;
+        }
+        console.info('Game has been saved');
+    }
+
+    Game.ExportSave = function () {
+        prompt('Copy this save: ', Game.WriteSave(true));
+    }
+
+    Game.ImportSave = function () {
+        var save = prompt("Enter your save: ")
+        if (save != '') Game.LoadSave(save);
+    }
+
+    Game.LoadSave = function (data) {
+        var str = '';
+        if (data) {
+            str = data.split(Game.name + '=');
+
+        }
+        else if (document.cookie.indexOf(Game.name) >= 0) {
+            str = document.cookie.split(Game.name + '=');
+        }
+        if (str != '') {
+            var cookie = str[1];
+            var save = cookie.split('|');
+            Game.moneyEarned = parseInt(save[0]);
+            Game.money = parseInt(save[1]);
+            Game.moneyIncome = parseInt(save[2]);
+            Game.incomeMultiplier = parseInt(save[3]);
+            Game.buildingsAmount = parseInt(save[4]);
+            Game.workers.amount = parseInt(save[5]);
+            Game.workers.salaryPaid = parseInt(save[6]);
+            Game.workers.cumulativeGains = parseInt(save[7]);
+            Game.bonusMultiplier = parseInt(save[8]);
+            Game.bonusCount = parseInt(save[9]);
+
+            var temp = 10;
+            var counter = 0;
+            for (var i = 0; i < Game.buildings.length; i++) {
+                Game.buildings[i].price = parseInt(save[temp + counter]);
+                counter++;
+                Game.buildings[i].income = parseInt(save[temp + counter]);
+                counter++;
+                Game.buildings[i].amount = parseInt(save[temp + counter]);
+                counter++;
+                Game.buildings[i].cumulativeGains = parseInt(save[temp + counter]);
+                counter++;
+            }
+
+            for (var i = 0; i < Game.upgrades.length; i++) {
+                if (save[temp + counter] == '1') {
+                    Game.upgrades[i].unlocked = true;
+                }
+                counter++;
+                if (save[temp + counter] == '1') {
+                    Game.upgrades[i].used = true;
+                }
+                counter++;
+            }
+            for (var i = 0; i < Game.achievements.length; i++) {
+                if (save[temp + counter] == '1') {
+                    Game.achievements[i].unlocked = true;
+                }
+                counter++;
+            }
+
+            console.info('Game has been loaded from a save');
+        }
+
+    }
+
+    Game.Reset = function () {
+        Game.UnlockAchievement('Reset');
+
+        Game.moneyEarned = 0;
+        Game.money = 20;
+        Game.moneyIncome = 0;
+        Game.incomeMultiplier = 100;
+        Game.buildingsAmount = 0;
+        Game.workers.amount = 0;
+        Game.workers.salaryPaid = 0;
+        Game.workers.cumulativeGains = 0;
+        Game.bonusMultiplier = 10;
+        Game.bonusCount = 0;
+
+        for (var i = 0; i < Game.buildings.length; i++) {
+            Game.buildings[i].price = Game.buildings[i].basePrice;
+            Game.buildings[i].income = Game.buildings[i].baseIncome;
+            Game.buildings[i].cumulativeGains = 0;
+            Game.buildings[i].amount = 0;
+        }
+
+        for (var i = 0; i < Game.upgrades.length; i++) {
+            Game.upgrades[i].unlocked = false;
+            Game.upgrades[i].used = false;
+        }
+
+        /*for (var i = 0; i < Game.achievements.length; i++) {
+            Game.achievements[i].unlocked = false;
+        } Reset wont clear achievements for now*/
+
+    }
+
+    Game.LoadSave();
+    Game.HandleEvents();
+}
+
+/*=================================================
+HANDLING EVENTS
+==================================================*/
+
+Game.HandleEvents = function () {
     Game.BuildingsListener = function (i) {
         AddEvent(getId('buyBuilding'.concat(i + 1)), 'click',
             function () {
@@ -302,6 +661,7 @@ Game.Init = function () {
                 }
             }
             );
+
         AddEvent(getId('sellBuilding'.concat(i + 1)), 'click',
             function () {
                 if (Game.buildings[i].amount <= 0) {
@@ -337,123 +697,25 @@ Game.Init = function () {
         Game.UpgradesListener(i);
     }
 
-    Game.WriteSave = function (exporting) {
-        var str = '';
-        str += Game.moneyEarned + '|';
-        str += Game.money + '|';
-        str += Game.moneyIncome + '|';
-        str += Game.incomeMultiplier + '|';
-        str += Game.buildingsAmount + '|';
-        str += Game.workers.amount + '|';
-        str += Game.workers.salaryPaid + '|';
 
-        for (var i = 0; i < Game.buildings.length; i++) {
-            str += Game.buildings[i].price + '|';
-            str += Game.buildings[i].income + '|';
-            str += Game.buildings[i].amount + '|';
-        }
-        for (var i = 0; i < Game.upgrades.length; i++) {
-            if (Game.upgrades[i].unlocked == true) {
-                str += 'true|';
-            }
-            else {
-                str += 'false|';
-            }
+    AddEvent(getId('btnSaveGame'), 'click', function () { Game.WriteSave(); });
+    AddEvent(getId('btnExport'), 'click', function () { Game.ExportSave(); });
+    AddEvent(getId('btnImport'), 'click', function () { Game.ImportSave(); });
+    AddEvent(getId('btnReset'), 'click', function () { Game.Reset(); });
 
-            if (Game.upgrades[i].used == true)
-                str += 'true|';
-            else
-                str += 'false|';
-        }
-        var now = new Date();
-        now.setFullYear(now.getFullYear() + 5);
-        str = Game.name + '=' + str + '; expires=' + now.toUTCString() + ';';
-        document.cookie = str;
-        if (exporting) {
-            return str;
-        }
-        console.info('Game has been saved');
-    }
+    AddEvent(getId('buyWorker'), 'click', function () { Game.workers.Buy() });
+    AddEvent(getId('sellWorker'), 'click', function () { Game.workers.Sell() });
 
-    Game.ExportSave = function () {
-        prompt('Copy this save: ', Game.WriteSave(1));
-    }
-
-    Game.ImportSave = function () {
-        var save = prompt("Enter your save: ")
-        if (save != '') Game.LoadSave(save);
-    }
-
-    Game.LoadSave = function (data) {
-        var str = '';
-        if (data) {
-            str = data.split(Game.name + '=');
-
-        }
-        else if (document.cookie.indexOf(Game.name) >= 0) {
-            str = document.cookie.split(Game.name + '=');
-        }
-        if (str != '') {
-            var cookie = str[1];
-            var save = cookie.split('|');
-            Game.moneyEarned = parseInt(save[0]);
-            Game.money = parseInt(save[1]);
-            Game.moneyIncome = parseInt(save[2]);
-            Game.incomeMultiplier = parseInt(save[3]);
-            Game.buildingsAmount = parseInt(save[4]);
-            Game.workers.amount = parseInt(save[5]);
-            Game.workers.salaryPaid = parseInt(save[6]);
-
-            var temp = 7;
-            var counter = 0;
-            for (var i = 0; i < Game.buildings.length; i++) {
-                Game.buildings[i].price = parseInt(save[temp + counter]);
-                counter++;
-                Game.buildings[i].income = parseInt(save[temp + counter]);
-                counter++;
-                Game.buildings[i].amount = parseInt(save[temp + counter]);
-                counter++;
-            }
-
-            for (var i = 0; i < Game.upgrades.length; i++) {
-                if (save[temp + counter] == 'true') {
-                    Game.upgrades[i].unlocked = true;
-                }
-                counter++;
-                if (save[temp + counter] == 'true') {
-                    Game.upgrades[i].used = true;
-                }
-                counter++;
-            }
-
-            console.info('Game has been loaded from a save');
-        }
-
-    }
-
-    Game.Reset = function () {
-        Game.moneyEarned = 0;
-        Game.money = 20;
-        Game.moneyIncome = 0;
-        Game.incomeMultiplier = 100;
-        Game.buildingsAmount = 0;
-        Game.workers.amount = 0;
-        Game.workers.salaryPaid = 0;
-
-        for (var i = 0; i < Game.buildings.length; i++) {
-            Game.buildings[i].price = Game.buildings[i].basePrice;
-            Game.buildings[i].income = Game.buildings[i].baseIncome;
-            Game.buildings[i].amount = 0;
-        }
-
-        for (var i = 0; i < Game.upgrades.length; i++) {
-            Game.upgrades[i].unlocked = false;
-            Game.upgrades[i].used = false;
-        }
-
-    }
-
-    Game.LoadSave();
+    AddEvent(getId('deposit'), 'click', function () {
+        if (getId('bankInput').value != '')
+        Game.bank.Deposit(parseInt(getId('bankInput').value));
+    });
+    AddEvent(getId('withdraw'), 'click', function () {
+        if (getId('bankInput').value != '')
+        Game.bank.Withdraw(parseInt(getId('bankInput').value));
+    });
+    AddEvent(getId('depositall'), 'click', function () { Game.bank.Deposit(Game.money); });
+    AddEvent(getId('withdrawall'), 'click', function () { Game.bank.Withdraw(Game.bank.storedMoney); });
 }
 
 /*=================================================
@@ -466,14 +728,31 @@ Game.DrawUpdate = function () {
     var money = getId('money');
     money.innerHTML = "Current money: $" + Beautify(Game.money, 0);
     var income = getId('income');
-    income.innerHTML = "Income per second: $" + Beautify(Game.moneyIncome, 0);
+    income.innerHTML = "Income per second: $" + Beautify(Game.moneyIncome, 0) + (Game.bonus ? ' (x' + Game.bonusMultiplier + ')' : '');
 
     //BUILDINGS
     for (var i = 0; i < Game.buildings.length; i++) {
         getId('buildingName'.concat(i + 1)).innerHTML = Game.buildings[i].name;
-        getId('buildingPrice'.concat(i + 1)).innerHTML = 'Price: ' + Beautify(Game.buildings[i].price, 0);
+        getId('buildingPrice'.concat(i + 1)).innerHTML = 'Price: $' + Beautify(Game.buildings[i].price, 0);
         getId('buildingAmount'.concat(i + 1)).innerHTML = 'Amount: ' + Game.buildings[i].amount;
     }
+
+    //UPGRADES
+
+    if (getId('gridView').checked) {
+        for (var i = 0; i < Game.upgrades.length; i++) {
+            getId('upgrade'.concat(i + 1)).style.width = '345px';
+            getId('upgrade'.concat(i + 1)).style.cssFloat = 'left';
+        }
+    }
+    else if (getId('listView').checked) {
+        for (var i = 0; i < Game.upgrades.length; i++) {
+            getId('upgrade'.concat(i + 1)).style.width = 'auto';
+            getId('upgrade'.concat(i + 1)).style.cssFloat = 'none';
+        }
+    }
+
+    getId('upgradesUnlocked').innerHTML = 'Unlocked upgrades: ' + Game.upgradesUnlocked + '/' + Game.upgrades.length + ' (' + Math.round(Game.upgradesUnlocked / Game.upgrades.length * 100) + '%)';
 
     for (var i = 0; i < Game.upgrades.length; i++) {
         if (Game.money < Game.upgrades[i].price || !Game.upgrades[i].unlocked) getId('upgrade'.concat(i + 1)).style.background = '#FF3333'; //red
@@ -485,17 +764,34 @@ Game.DrawUpdate = function () {
 
         getId('upgradeName'.concat(i + 1)).innerHTML = 'Name: ' + Game.upgrades[i].name;
         getId('upgradeDesc'.concat(i + 1)).innerHTML = 'Description: ' + Game.upgrades[i].desc;
-        getId('upgradePrice'.concat(i + 1)).innerHTML = 'Price: $' + Beautify(Game.upgrades[i].price, 0);
+        getId('upgradePrice'.concat(i + 1)).innerHTML = 'Price: <b>$' + Beautify(Game.upgrades[i].price, 0) + '</b>';
     }
+
+    //BANK
+    getId('storedMoney').innerHTML = 'Stored money: <b>$' + Beautify(Game.bank.storedMoney) + '</b>';
+    getId('moneyRate').innerHTML = 'Interest rate: <b>' + Beautify(Game.bank.moneyRate) + '%</b>';
 
     //STATISTICS
     getId('moneyEarned').innerHTML = '<b>Money earned during entire gameplay:</b> $' + Beautify(Game.moneyEarned);
     getId('incomePerMinute').innerHTML = '<b>Income per minute:</b> $' + Beautify(Game.moneyIncome * 60);
     getId('incomeMultiplier').innerHTML = '<b>Income multiplier:</b> ' + Beautify(Game.incomeMultiplier) + '%';
-    getId('buildingsOwned').innerHTML = '<b>Owned buildings in total:</b> ' + Beautify(Game.buildingsAmount);
+    getId('buildingsOwned').innerHTML = '<b>Buildings owned in total:</b> ' + Beautify(Game.buildingsAmount);
     getId('salaryPaid').innerHTML = '<b>Total salary paid to workers:</b> $' + Beautify(Game.workers.salaryPaid);
+    getId('workersGains').innerHTML = '<b>Cumulative gains from workers:</b> $' + Beautify(Game.workers.cumulativeGains);
     for (var i = 0; i < Game.buildings.length; i++) {
-        getId('cumulative'.concat(i + 1)).innerHTML = '<b>Cumulative income from ' + Game.buildings[i].name + ':</b> $' + Beautify(Game.buildings[i].cumulativeIncome);
+        getId('cumulative'.concat(i + 1)).innerHTML = '<b>Cumulative income per second from ' + Game.buildings[i].name + ':</b> $' + Beautify(Game.buildings[i].cumulativeIncome);
+        getId('cumulativeGains'.concat(i + 1)).innerHTML = '<b>Cumulative gains from ' + Game.buildings[i].name + ':</b> $' + Beautify(Game.buildings[i].cumulativeGains);
+    }
+
+    //ACHIEVEMENTS
+
+    for (var i = 0; i < Game.achievements.length; i++) {
+        getId('achievementName'.concat(i + 1)).innerHTML = 'Name: ' + Game.achievements[i].name;
+        getId('achievementDesc'.concat(i + 1)).innerHTML = 'Description: ' + Game.achievements[i].desc;
+        if (Game.achievements[i].unlocked) getId('achievement'.concat(i + 1)).style.display = 'block';
+        else
+            getId('achievement'.concat(i + 1)).style.display = 'none';
+
     }
 
     //WORKERS
@@ -509,16 +805,11 @@ Game.DrawUpdate = function () {
 
     if (Game.tick % (Game.fps) == 0) Game.workers.remainingTime--;
     if (Game.workers.remainingTime == 0) {
-        Game.workers.remainingTime = Game.workers.apaymentTime;
+        Game.workers.remainingTime = Game.workers.paymentTime;
         console.log('test');
     }
 
-    if (Game.workers.paymentTime != Game.workers.apaymentTime) {
-        Game.workers.remainingTime = Game.workers.paymentTime;
-        Game.workers.apaymentTime = Game.workers.paymentTime;
-    }
-
-    getId('time').innerHTML = 'Remaining time to payout: ' + parseInt(Game.workers.remainingTime / 60) + ':' + parseInt(Game.workers.remainingTime % 60);
+    getId('time').innerHTML = 'Remaining time to payout: <b>' + parseInt(Game.workers.remainingTime / 60) + ':' + parseInt(Game.workers.remainingTime % 60) + '</b>';
 }
 
 /*=================================================
@@ -535,7 +826,9 @@ Game.Logic = function () {
         }
         accumulatedIncome += (Game.workers.baseIncome * (Math.pow(1.05, Game.workers.amount) - 1)) / (0.05)
 
-        Game.moneyIncome = accumulatedIncome * Game.incomeMultiplier / 100;
+        if (Game.bonus) Game.moneyIncome = (accumulatedIncome * Game.incomeMultiplier / 100) * Game.bonusMultiplier;
+        else
+            Game.moneyIncome = accumulatedIncome * Game.incomeMultiplier / 100;
     }
 
     for (var i = 0; i < Game.buildings.length; i++) {
@@ -545,13 +838,18 @@ Game.Logic = function () {
 
     Game.UpdateIncome();
 
+    for (var i = 0; i < Game.buildings.length; i++) {
+        Game.buildings[i].cumulativeGains += Game.buildings[i].cumulativeIncome * (Game.bonus?Game.bonusMultiplier:1) / Game.fps;
+    }
+
     //WORKERS RELATED
 
     Game.workers.price = Math.pow(1.15, Game.workers.amount) * Game.workers.basePrice;
     Game.workers.income = Math.pow(1.05, Game.workers.amount) * Game.workers.baseIncome;
     Game.workers.cumulativeIncome = ((Game.workers.baseIncome * (Math.pow(1.05, Game.workers.amount) - 1)) / 0.05) * Game.incomeMultiplier / 100;
+    Game.workers.cumulativeGains += Game.workers.cumulativeIncome * (Game.bonus ? Game.bonusMultiplier : 1) / Game.fps;
 
-    Game.workers.salary = Game.workers.cumulativeIncome * 5;
+    Game.workers.salary = (Game.moneyIncome /2) * (Game.workers.cumulativeIncome / 100);
 
     Game.GetMoney(Game.moneyIncome / Game.fps);
 
@@ -569,7 +867,45 @@ Game.Logic = function () {
 
     Game.buildingsAmount = buildingsAmount;
 
+    var upgradesUnlocked = 0;
+    for (var i = 0; i < Game.upgrades.length; i++) {
+        if (Game.upgrades[i].unlocked)
+            upgradesUnlocked++;
+    }
+
+    Game.upgradesUnlocked = upgradesUnlocked;
+
+    //ACHIEVEMENTS UNLOCKING
+    if (Game.moneyEarned >= 10000) Game.UnlockAchievement('Little business');
+    if (Game.moneyEarned >= 100000) Game.UnlockAchievement('Getting serious');
+    if (Game.moneyEarned >= 1000000) Game.UnlockAchievement('Millionaire');
+    if (Game.moneyEarned >= 1000000000) Game.UnlockAchievement('Billionaire');
+    if (Game.money >= 1000000) Game.UnlockAchievement('Big pockets');
+    if (Game.upgradesUnlocked == Game.upgrades.length) Game.UnlockAchievement('Enhancer');
+
+    //BONUS
+
+    if (Game.bonus) {
+        if (Game.tick % (Game.fps) == 0) {
+            Game.bonusTimeRemaining--;
+        }
+        if (Game.bonusTimeRemaining == 0) {
+            Game.bonusTimeRemaining = Game.bonusTime;
+            Game.bonus = false;
+        }
+    }
+
+    if (Game.tick % (Game.fps * 10) == 0 && Game.tick > Game.fps * 10) {
+        if (Game.bank.storedMoney > 0) {
+            Game.bank.storedMoney += Game.bank.storedMoney * Game.bank.moneyRate / 100;
+            console.log('masz wiecej hajsu');
+        }
+    }
     if (Game.tick % (Game.fps * 60) == 0 && Game.tick > Game.fps * 10) Game.WriteSave();
+    if (Game.tick % (Game.fps * getRandom(60, 160)) == 0 && Game.tick > Game.fps * 30 && !Game.bonus) {
+        Game.bonus = true;
+        Game.bonusCount++;
+    }
     if (Game.tick % (Game.fps * Game.workers.paymentTime) == 0 && Game.tick > Game.fps * Game.workers.paymentTime - 1) Game.workers.Pay();
     Game.tick++;
 }
