@@ -1,7 +1,25 @@
-﻿
+﻿@font-face {
+    font-family: 'Cabin';
+    src:  url('fonts/Cabin-Regular.otf') format('opentype'); 
+}
+
+@font-face {
+    font-family: 'Cabin';
+	font-weight: bold;
+    src:  url('fonts/Cabin-Bold.otf') format('opentype'); 
+}
+
+@font-face {
+    font-family: 'Calibri';
+    src:  url('fonts/CALIBRI.ttf') format('truetype'); 
+}
+
+@import url(http://fonts.googleapis.com/css?family=Roboto:400,700);
+@import url(http://fonts.googleapis.com/css?family=Open+Sans:400,700);
+
 body {
     margin: 0;
-    font: normal 12px Verdana;
+    font: normal 15px Roboto;
     background: #6BCAE2;
 }
 
@@ -13,122 +31,48 @@ body {
 #container {
 	width: 1000px;
 	margin: 0 auto;
-	}
-
-ul.tabs
-{
-	float: left;
-	margin: 0;
-	padding: 0;
-    list-style-type: none;
-	display: inline;
-    box-shadow: 2px 2px 30px 1px rgba(0, 0, 0, 0.5);
-}
-        
-
-        
-ul.tabs li a
-{
-	width: 200px;
-	display: block;
-    text-decoration: none;
-    position: relative;
-	padding: 20px 12px;
-    border: 1px solid black;
-    border-bottom-color: black;
-    color: #000;
-    background: #51A5BA;
-    border-radius: 3px 0 0 3px;
-}
-        
-ul.tabs li a:visited
-{
-    color: #000;
-}
-        
-ul.tabs li a:hover
-{
-    border: 1px solid black;
-    background: #21BEDE;
-}
-        
-ul.tabs li.selected a, ul.tabs li.selected a:hover
-{
-    position: relative;
-    font-weight: bold;
-    /*background: #21BEDE*/
-    background: linear-gradient(to bottom, rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%);
-    border: 1px solid black;
-}
-        
-        
-ul.tabs li.selected a:hover
-{
-    text-decoration: none;
-}
-     
-
-div.tabcontents
-{
-	float: right;
-	width: 800px;
-    border: 1px solid black; 
-	/*padding: 30px;*/
-    background: #21BEDE;
-    border-radius: 0 3px 3px 3px;
-    box-shadow: 2px 2px 30px 1px rgba(0, 0, 0, 0.5);
 }
 
-.content {
-    padding: 30px;
-    overflow: auto;
-}
-
-.tabcontents h2 {
-    margin: 0;
-    padding: 16px;
-    background: linear-gradient(to bottom, rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%);
-    border-bottom: 1px solid black;
-    margin: 0;
+#cover {
+    display: none;
+    background-color: black;
+    opacity: 0.4;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5000;
 }
 
 #inner {
-    margin-top: 20px;
+    margin: 20px 0;
 }
 
-.buildingItem {
+#tooltip {
+    display: none;
+    padding: 10px;
     border: 1px solid black;
-    margin: 3px 10px;
-    overflow: hidden;
-    background: #AFEAAA;
+	border-radius: 3px;
+    background: white;
+    position: absolute;
+    width: auto;
+    box-shadow: 2px 2px 10px 0px rgba(50, 50, 50, 0.75);
+    z-index: 999999;
 }
 
-.buildingName, .buildingPrice, .buildingAmount {
-    margin: 5px;
-    position: relative;
-    top: 12px;
-}
-
-.buildingName {
-    font-weight: bold;
-}
-
-.buyBuilding, .sellBuilding {
-	font-family: Tahoma;
-    border-left: 1px solid black;
-    padding: 10px 15px;
-    font-size: 150%;
-    text-transform: uppercase;
-    display: inline;
-    float: right;
-    margin: 0;
-    width: 130px;
-    background: linear-gradient(to bottom, rgba(255,168,76,1) 0%,rgba(255,123,13,1) 100%);
-    text-align: center;
-}
-
-.buyBuilding, .sellBuilding {
-    cursor: pointer;
+#prompt {
+    display: none;
+    padding: 20px;
+    border: 1px solid black;
+	border-radius: 3px;
+    background: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: auto;
+    box-shadow: 2px 2px 10px 0px rgba(50, 50, 50, 0.75);
+    z-index: 9999999;
 }
 
 #upperbar {
@@ -139,54 +83,432 @@ div.tabcontents
     box-shadow: 2px 2px 30px 1px rgba(0, 0, 0, 0.5);
 }
 
-#money, #income {
+.upper-info {
     font-size: 120%;
     font-weight: bold;
-    margin: 20px;
+    margin: 15px;
     text-shadow: 0 0 10px white;
+    padding-left: 30px;
+}
+
+#money {
+    background: url('res/money.png') 5px 50% no-repeat;
+}
+
+#income {
+    background: url('res/income4.png') 5px 50% no-repeat;
+}
+
+.bonus-active {
+    -webkit-animation: pulsate .5s infinite alternate;
+    -moz-animation: pulsate .3s infinite alternate;
+    -animation: pulsate .6s infinite alternate;
+    color: #ffc92b;
+}
+
+@-webkit-keyframes pulsate {
+    from { text-shadow: 0 0 10px #ffd65e; }
+    to { text-shadow: 0 0 20px #ffc92b; }
+}
+@-moz-keyframes pulsate {
+    from { box-shadow: 0 0 10px #121212; }
+    to { box-shadow: 0 0 20px #0099CC; }
+}
+@keyframes pulsate {
+    from { box-shadow: 0 0 10px #121212; }
+    to { box-shadow: 0 0 20px #0099CC; }
+}
+
+#tax {
+    background: url('res/tax.png') 5px 50% no-repeat;
+}
+
+.content {
+    padding: 30px;
+    overflow: hidden;
+}
+
+.tabs
+{
+	float: left;
+	margin: 0;
+	padding: 0;
+    list-style-type: none;
+	display: inline;
+    box-shadow: 2px 2px 30px 1px rgba(0, 0, 0, 0.5);
+}
+
+.money-bg {
+	background: url('res/coins.png') 0 center no-repeat;
+	padding-left: 20px;
+}
+
+.clock-bg {
+	background: url('res/clock-small.png') 100% center no-repeat;
+	padding-right: 20px;
+}
+
+.tabs li a
+{
+    display: inline-block;
+	width: 200px;
+    text-decoration: none;
+    position: relative;
+	padding: 8px;
+    border: 1px solid black;
+    border-bottom-width: 0;
+    border-bottom-color: black;
+    color: #000;
+    background: #51A5BA;
+    /*border-radius: 3px 0 0 3px;*/
+	opacity: 0.85;
+}
+
+.tabs li:last-child a {
+    border-bottom-width: 1px;
+    border-radius: 0 0 0 3px;
+}
+
+.tabs li:first-child a {
+    border-radius: 3px 0 0 0;
+}
+
+.tabs li a .desc {
+    font-size: 90%;
+    font-weight: normal;
+    padding-left: 5px;
+    font-style: italic;
+}
+        
+.tabs li a:visited
+{
+    color: #000;
+}
+        
+.tabs li a:hover
+{
+    background: #21BEDE;
+	opacity: 1;
+    text-shadow: 0 0 10px white;
+}
+        
+.tabs .selected a, .tabs .selected a:hover
+{
+    position: relative;
+    font-weight: bold;
+    text-shadow: 0 0 10px white;
+    background: linear-gradient(to bottom, rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%);
+	opacity: 1;
+}
+
+.tabs a div {
+    padding: 10px 0 10px 40px;
+    background: 0 center no-repeat;
+}
+
+.tabs .mining div {
+    background-image: url('res/menu/mining.png');
+}
+
+.tabs .upgrades div {
+    background-image: url('res/menu/upgrades.png');
+}
+
+.tabs .workers div {
+    background-image: url('res/menu/workers.png');
+}
+
+.tabs .bank div {
+    background-image: url('res/menu/bank.png');
+}
+
+.tabs .lottery div {
+    background-image: url('res/menu/lottery.png');
+}
+
+.tabs .statistics div {
+    background-image: url('res/menu/stats.png');
+}
+ 
+.tabs .achievements div {
+    background-image: url('res/menu/achievements.png');
+} 
+
+.tabs .options div {
+    background-image: url('res/menu/options.png');
+}
+
+.tabcontents
+{
+    position: relative;
+    left: -1px;
+	float: right;
+	width: 800px;
+    border: 1px solid black; 
+    background: #21BEDE;
+    border-radius: 0 3px 3px 3px;
+    box-shadow: 10px 2px 30px 1px rgba(0, 0, 0, 0.5);
+}
+
+.tabcontents h1 {
+    margin: 0;
+    padding: 15px;
+    background: linear-gradient(to bottom, rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%);
+    border-bottom: 1px solid black;
+	font-size: 20px;
+}
+
+.buildingItem {
+    border: 1px solid black;
+    margin: 0 0 4px 0;
+    overflow: hidden;
+    background: #AFEAAA;
+    position: relative;
+}
+
+.buildingItem:hover {
+    background: #a0e69a;
+}
+
+.buildingName {
+    font-weight: bold;
+}
+
+.buildingInfo {
+    padding: 2px 6px;
+}
+
+.buildingPrice, .buildingAmount, .buildingTier {
+    font-size: 14px;
+}
+
+.sell-buy {
+    position: absolute;
+    box-shadow:inset 0px 1px 0px 0px #fff;
+	font-family: Cabin;
+    border-left: 1px solid black;
+    text-transform: uppercase;
+    margin: 0;
+    width: 70px;
+    background: linear-gradient(to bottom, rgba(255,168,76,1) 0%,rgba(255,123,13,1) 100%);
+    vertical-align: middle;
+    text-align: center;
+    line-height: 81px;
+}
+
+.sell-buy:active {
+    top: 1px;
+}
+
+.sell-buy:hover {
+    background: linear-gradient(to bottom,#ffb260 0%,rgba(255,123,13,1) 100%);
+}
+
+.buyBuilding {
+    top: 0;
+    bottom: 0;
+    right: 210px;
+}
+
+.buyMaxBuildings {
+    top: 0;
+    bottom: 0;
+    right: 140px;
+}
+
+.sellBuilding {
+    top: 0;
+    bottom: 0;
+    right: 70px;
+}
+
+.sellAllBuildings {
+    top: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.upgrade-building {
+    top: 0;
+    bottom: 0;
+    right: 280px;
+    background: linear-gradient(to bottom, #ffd65e 0%,#febf04 100%);
+    display: none;
+    /*box-shadow: 0px 0px 15px 0px #febf04;*/
+}
+
+.upgrade-building:hover {
+    background: linear-gradient(to bottom, #ffdb72 0%,#febf04 100%);
+}
+
+
+.sell-buy:hover {
+    cursor: pointer;
+}
+
+#restoration-error {
+    color: red;
 }
 
 .button {
-    float: left;
-    margin: 10px;
+    display: inline-block;
+    font-size: 13px;  
     border: 1px solid black;
     padding: 10px;
     background: linear-gradient(to bottom, rgba(255,168,76,1) 0%,rgba(255,123,13,1) 100%);
     color: black;
     border-radius: 3px 3px 3px 3px;
+    box-shadow:inset 0px 1px 0px 0px #fff;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.button:active {
+	position: relative;
+	top: 1px;
 }
 
 .button:hover {
     cursor: pointer;
+    background: linear-gradient(to bottom, #ffb260 0%,rgba(255,123,13,1) 100%);
+}
+
+input[type=text], input[type=number], select, option, textarea {
+    border-radius: 3px;
+    font: 15px Verdana;
+    padding: 8px;
+    border: 1px solid black;
+    vertical-align: middle;
+    transition: border 0.3s;
+	margin-top: 2px;
+	margin-bottom: 2px;
+}
+
+input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
+    outline: 0;
+    border-color: #ff7b0d;
+}
+
+
+.input-option {
+    display: block;
+}
+
+#upgradesList {
+	float: left;
 }
 
 .upgrade {
+	background-image: url('res/upgrade-icon2.png');
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
     border: 1px solid black;
     font-size: 11px;
     padding: 7px;
-    margin: 10px 10px;
+    margin: 10px 10px 0 0;
+	width: 51px;
+	height: 51px;
+	float: left;	
+    transition: all 0.3s ease-in-out;
+    transition-property: background-color, opacity, box-shadow;
 }
 
-.upgrade:hover {
+.active-upgrade:hover {
     cursor: pointer;
-    }
+    box-shadow: 0px 0px 20px 0px rgba(255,168,76,1);
+}
+
+.active-upgrade:active {
+    background-position-y: 65%;
+}
 
 .stat {
     margin: 7px 0;
 }
 
 .achievement {
-    background: #FFCC00;
-    border: 1px solid black;
-    font-size: 11px;
+    background: /*#FFCC00*/ url('res/medal.png') 50% 50% no-repeat;
     padding: 7px;
     margin: 10px;
+    height: 47px;
+    width: 47px;
+    float: left;
+
 }
 
-input[type=text] {
-    border-radius: 3px;
-    margin-top: 10px;
-    font: 17px Verdana;
-    padding: 5px;
+.unlockedPercentage {
+    float: right;
+}
+
+.messagebox {
+    font: 18px 'Roboto';
+    border: 4px solid black;
+    margin: 0 0 10px;
+    padding: 8px;
+    overflow: auto;
+    display: none;
+    position: relative;
+	word-wrap: break-word;
+	text-indent: 24px;
+}
+
+.messagebox .closebox {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    height: 20px;
+    width: 20px;
+    background: url('res/close-icon2.png') center center no-repeat;
+}
+
+.messagebox .closebox:hover {
+     cursor: pointer;
+}
+
+#statistics_table {
+    border-collapse: collapse;
     border: 1px solid black;
+    width: 100%;
+}
+
+#statistics_table tr, td {
+    padding: 10px;
+}
+
+#statistics_table td {
+	width: 55%;
+}
+
+#statistics_table tr {
+    border-top: 1px solid black;
+}
+
+#statistics_table tr:hover {
+    background: white;
+	/*box-shadow: inset 0px 0px 30px 2px rgba(50, 50, 50, 0.75)*/;
+}
+
+.trValue {
+    font-weight: bold;
+}
+
+.tbcolor1 {
+    background: #DAE5CA;
+}
+
+.tbcolor2 {
+    background: #21BEDE;
+}
+
+.num {
+    width: 40px;
+    margin: 0 10px 0 0;
+    text-align: center;
+}
+
+#random_numbers {
+    font-size: 35px;
+	word-spacing: 0.35em;
+    font-weight: bold;
+	text-shadow: 0 0 7px white;
 }
