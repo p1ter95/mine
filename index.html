@@ -6,7 +6,7 @@
     <link href='http://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'>
     <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="tabcontent.js" type="text/javascript"></script>
-    <script src="script.js" type="text/javascript"></script>
+    <script src="script_shares.js" type="text/javascript"></script>
 </head>
 
 <body>
@@ -18,104 +18,116 @@
     <div id="container">
 
         <div id="upperbar">
-            <div id="money" class="upper-info">Current money: <span id="cash"></span></div>
-            <div id="income" class="upper-info">Income per second: <span id="ips"></span></div>
+            <div id="money" class="upper-info">Current money: <span id="money-text"></span></div>
+            <div id="income" class="upper-info">Income per second: <span id="income-text"></span></div>
             <div id="tax" class="upper-info"></div>
         </div>
 
         <div id="inner">
             <ul class="tabs" data-persist="true">
-                <li class="mining"><a href="#view1"><div>Mine</div></a></li>
-                <li class="upgrades"><a href="#view2"><div>Upgrades</div></a></li>
-                <li class="workers"><a href="#view3"><div>Workers</div></a></li>
-			    <li class="bank"><a href="#view4"><div>Bank</div></a></li>
-                <li class="lottery"><a href="#view5"><div>Lottery</div></a></li>
-                <li class="statistics"><a href="#view6"><div>Statistics</div></a></li>
-                <li class="achievements"><a href="#view7"><div>Achievements</div></a></li>
-                <li class="options"><a href="#view8"><div>Options</div></a></li>
+                <li class="mining"><a href="#mining"><div>Mine</div></a></li>
+                <li class="upgrades"><a href="#upgrades"><div>Upgrades</div></a></li>
+                <li class="workers"><a href="#workers"><div>Workers</div></a></li>
+			    <li class="bank"><a href="#bank"><div>Bank</div></a></li>
+                <li class="lottery"><a href="#lottery"><div>Lottery</div></a></li>
+                <li class="stockmarket"><a href="#stockmarket"><div>Stock market</div></a></li>
+                <li class="statistics"><a href="#statistics"><div>Statistics</div></a></li>
+                <li class="achievements"><a href="#achievements"><div>Achievements</div></a></li>
+                <li class="options"><a href="#options"><div>Options</div></a></li>
             </ul>
 
         <div class="tabcontents">
 
-            <div id="view1" class="view">       
+            <div id="mining" class="view">       
                 <h1>Mining</h1>
-                <div id="mine" class="content">
+                <div class="content">
                     <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
                 </div>
             </div>
 
-            <div id="view2" class="view">
+            <div id="upgrades" class="view">
                 <h1>Upgrades</h1>
-                <div id="upgrades" class="content">
+                <div class="content">
                     <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
 					<div id="upgradesUnlocked" class="unlockedPercentage"/></div>
-                    <div id="upgradesList">
-                        </div>
+                    <div id="upgradesList"></div>
                 </div>
             </div>
 
-            <div id="view3" class="view" >
+            <div id="workers" class="view">
                 <h1>Workers</h1>
-                <div id="workers" class="content">
+                <div class="content">
                     <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                        <button id="buyWorker" class="button">Hire a worker</button>
-                        <button id="buyMaxWorkers" class="button">Hire max workers</button>
-                        <button id="sellWorker" class="button">Fire a worker</button>
-                        <button id="sellAllWorkers" class="button">Fire all workers</button>
-                        <div id="workersAmount"></div>
-                        <div id="workersPrice"></div>
-                        <div id="workersReqMoney"></div>
-                        <div id="salaryPaid"></div>
-                        <div id="workersEfficiency"></div>  
-                        <input id="workersSalary" type="text">                  
-                        <button id="workersPay" class="button">Pay</button>
-                        <button id="workersPayMax" class="button">Pay Max</button>
+                        <button id="buy-worker">Hire a worker</button>
+                        <button id="buy-max-workers">Hire max workers</button>
+                        <button id="sell-worker">Fire a worker</button>
+                        <button id="sell-all-workers">Fire all workers</button>
+                        <div id="workers-amount"></div>
+                        <div id="workers-price"></div>
+                        <div id="workers-req-money"></div>
+                        <div id="workers-salary-paid"></div>
+                        <div id="workers-efficiency"></div>  
+                        <input id="workers-salary" type="text">                  
+                        <button id="workers-pay">Pay</button>
+                        <button id="workers-pay-max">Pay Max</button>
                 </div>
             </div>
 
-			<div id="view4" class="view">
+			<div id="bank" class="view">
                 <h1>Bank</h1>
-                <div id="bank" class="content">
+                <div class="content">
                     <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                    <div id="storedMoney"></div>
-                    <div id="moneyRate"></div>
-                    <div id="moneyIncrease"></div>
-                    <div id="moneyCap"></div>
-                    <input id="bankInput" type="text">
-                    <button id="deposit" class="button">Deposit</button>
-                    <button id="withdraw" class="button">Withdraw</button>  
-                    <button id="depositall" class="button">Deposit all money</button>
-                    <button id="withdrawall" class="button">Withdraw all money</button>                              
-                    <div id="loanDebt"></div>
-                    <div id="loanRate"></div>
-                    <div id="loanRemainingTime"></div>                 
-                    <input id="loanAmount" type="text">   
-                    <button id="borrow" class="button">Borrow</button>               
+                    <h3>Deposit</h3>
+                    <div id="bank-stored-money"></div>
+                    <div id="bank-money-rate"></div>
+                    <div id="bank-money-increase"></div>
+                    <div id="bank-cap"></div>
+                    <input id="bank-input" type="text">
+                    <button id="deposit">Deposit</button>
+                    <button id="withdraw">Withdraw</button>  
+                    <button id="deposit-all">Deposit all money</button>
+                    <button id="withdraw-all">Withdraw all money</button>     
+                    <h3>Loans</h3>                        
+                    <div id="loan-debt"></div>
+                    <div id="loan-rate"></div>
+                    <div id="max-loan"></div>
+                    <div id="loan-remaining-time"></div>                 
+                    <input id="loan-amount" type="text">   
+                    <button id="borrow">Borrow</button>  
+                    <button id="borrow-max">Borrow Max</button>                
                     <div>
-                        <input id="paybackAmount" type="text">
-                        <button id="payback" class="button">Payback</button>                       
+                        <input id="payback-amount" type="text">
+                        <button id="payback">Payback</button>    
+                        <button id="payback-all">Pay all money back</button>                      
                     </div>
 
                 </div>
             </div>
 
-            <div id="view5" class="view">
+            <div id="lottery" class="view">
                 <h1>Lottery</h1>
-                <div id="lottery" class="content">
+                <div class="content">
                     <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
                 </div>
             </div>
 
-            <div id="view6" class="view">
+            <div id="stockmarket" class="view">
+                <h1>Stock market</h1>
+                <div class="content">
+                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+                </div>
+            </div>
+
+            <div id="statistics" class="view">
                 <h1>Statistics</h1>
-                <div id="statistics" class="content">
+                <div class="content">
                     <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
                 </div>
             </div>
 
-            <div id="view7" class="view">
+            <div id="achievements" class="view">
                 <h1>Achievements</h1>
-                <div id="achievements" class="content">
+                <div class="content">
                     <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
                     <div>
                         <span id="achievementsInfo"></span>
@@ -124,19 +136,20 @@
                 </div>
             </div>
 
-            <div id="view8" class="view">
+            <div id="options" class="view">
                 <h1>Options</h1>
-                <div id="options" class="content">
+                <div class="content">
                     <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                    <button id="btnSaveGame" class="button">Save Game</button>
-                    <button id="btnExport" class="button">Export Game</button>
-                    <button id="btnImport" class="button">Import Game</button>
-                    <button id="btnReset" class="button">Reset</button>
-                    <button id="btnClearSave" class="button">Clear save</button>
+                    <button id="save-game">Save Game</button>
+                    <button id="export-game">Export Game</button>
+                    <button id="import-game">Import Game</button>
+                    <button id="reset">Reset</button>
+                    <button id="clear-save">Clear save</button>
                     <div>
-                        <input class="input-option" id="option-fps" type="text"/>
-                    
-                    
+                        <input class="input-option" id="option-fps" type="number"/>
+                        <label for="option-auto-save">Auto-Save</label>
+                        <input class="input-option" id="option-autosave" type="checkbox"/>
+                        <input class="input-option" id="option-autosave-time" type="number"/>
                         <select class="input-option" id="option-numbers">
                             <option value="0">Raw numbers</option>
                             <option value="1">Words</option>
