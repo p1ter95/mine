@@ -1,4 +1,4 @@
-﻿/*=================================================
+﻿﻿/*=================================================
 UTILITY FUNCTIONS
 ==================================================*/
 
@@ -8,6 +8,16 @@ function sortByNumber(a, b) { //Sorts array by objects price property
     if (a.price > b.price)
         return 1;
     return 0;
+}
+
+
+function preload(images) {
+	var _images = [];
+	for (i = 0; i < images.length; i++) {
+		_images[i] = new Image();
+		_images[i].src = images[i];
+		console.log(_images[i].src);
+	}
 }
 
 function getId(id) { return document.getElementById(id); } //Shortcut for the long name function
@@ -111,7 +121,6 @@ Game.Init = function () {
     Game.achievementsUnlocked = 0;
     Game.spentOnUpgrades = 0;
     Game.cumulativeGains = 0;
-    Game.stockmarketBalance = 0;
 
     Game.tax = 23;
     Game.moneySpentOnTax = 0;
@@ -122,7 +131,7 @@ Game.Init = function () {
     Game.bonusTimeRemaining = Game.bonusTime;
     Game.bonusMultiplier = 10;
     Game.ultraBonusMultiplier = 1337;
-    Game.ultraBonusProbability = 1;
+    Game.ultraBonusProbability = 3;
     Game.bonusCount = 0;
     Game.ultraBonusCount = 0;
     Game.bonusMinTime = 60;
@@ -153,6 +162,7 @@ Game.Init = function () {
     Game.bank.moneyRate = 2;
     Game.bank.moneyIncreaseTime = 100;
     Game.bank.remainingTime = Game.bank.moneyIncreaseTime;
+	Game.bank.borrowedMoney = 0;
     Game.bank.loanDebt = 0;
     Game.bank.loanRate = 20;
     Game.bank.loanTime = 60 * 3;
@@ -171,6 +181,11 @@ Game.Init = function () {
     Game.lottery.scores = [0, 0, 0, 0, 0];
     Game.lottery.blocked = false;
     Game.lottery.blockTime = 3;
+	
+	Game.stockmarket = {};
+	Game.stockmarket.balance = 0;
+	Game.stockmarket.updateTime = 20;
+	Game.stockmarket.remainingTime = Game.stockmarket.updateTime;
 
     Game.firstRun = true;
     Game.startTime = null;
@@ -217,9 +232,10 @@ Game.Init = function () {
         if (howmuch > Game.money) {
             Game.MessageBox('Nie masz wystarczająco pieniędzy', 2);
         }
-        else {
+        else if (howmuch > 0) {
             Game.workers.salaryPaid += howmuch;
             Game.Spend(howmuch);
+			Game.MessageBox('You have paid <strong class="money-bg">' + Beautify(howmuch) + '</strong>', 0)
         }
     }
 
@@ -258,35 +274,46 @@ Game.Init = function () {
         if (Game.money <= 0) {
             Game.MessageBox('Nie możesz pożyczać nie mając pieniędzy', 2);
         }
+		else if (Game.bank.loanDebt > 0) {
+            Game.MessageBox('Nie możesz pożyczyć mając dług', 2);
+        }
         else if (amount > Game.bank.maxLoan) {
             Game.MessageBox('Nie możesz tyle pożyczyć jednorazowo', 2);
         }
-        else if (Game.bank.loanDebt + amount > Game.bank.maxLoan) {
+        /*else if (Game.bank.loanDebt + amount > Game.bank.maxLoan) {
             Game.MessageBox('Nie możesz pożyczyć więcej', 2);
-        }
+        }*/
         else if(amount > 0){
             Game.GetRawMoney(amount);
-            Game.bank.loanDebt += addPercent(amount, Game.bank.loanRate);
+            Game.bank.loanDebt += Math.floor(addPercent(amount, Game.bank.loanRate));
+			Game.bank.borrowedMoney += Math.floor(addPercent(amount, Game.bank.loanRate));
             Game.MessageBox('You have borrowed <strong class="money-bg">' + Beautify(amount) + '</strong>', 0);
+			Game.bank.loanRemainingTime = Game.bank.loanTime;
         }
     }
 
-    Game.bank.payback = function (amount) {
-        if (amount > Game.bank.loanDebt) {
-            Game.MessageBox('You can\'t payback more than your debt amount', 2);
-        }
-        else if (Game.bank.loanDebt <= 0) {
+    Game.bank.payback = function (amount) {     
+        if (Game.bank.loanDebt <= 0) {
             Game.MessageBox('You have no loan debt', 2);
         }
-        else if (amount > Game.money) {
-            Game.bank.loanDebt -= Game.money;
-            Game.MessageBox('You have payed <strong class="money-bg">' + Beautify(Game.money) + '</strong> back', 0);
-            Game.money = 0;
+		else if (amount > Game.bank.loanDebt) {
+			var debt = Game.bank.loanDebt;
+			Game.money -= debt;
+			Game.bank.loanDebt = 0;
+			Game.bank.borrowedMoney = 0;
+            //Game.MessageBox('You can\'t payback more than your debt amount', 2);
+			Game.MessageBox('You have paid <strong class="money-bg">' + Beautify(debt) + '</strong> back', 0);
         }
+        /*else if (amount > Game.money) {
+            Game.bank.loanDebt -= Game.money;
+            Game.MessageBox('You have paid <strong class="money-bg">' + Beautify(Game.money) + '</strong> back', 0);
+            Game.money = 0;
+        }*/
         else {
             Game.money -= amount;
             Game.bank.loanDebt -= amount;
-            Game.MessageBox('You have payed <strong class="money-bg">' + Beautify(amount) + '</strong> back', 0);
+			if(Game.bank.loanDebt <= 0) Game.bank.borrowedMoney = 0;
+            Game.MessageBox('You have paid <strong class="money-bg">' + Beautify(amount) + '</strong> back', 0);
         }
     }
 
@@ -328,8 +355,8 @@ Game.Init = function () {
         }
         else {
             Game.Spend(share.price);
-            Game.stockmarketBalance -= share.price;
-            share.amount++;
+            Game.stockmarket.balance -= share.price;
+            share.owned++;
             share.invested += share.price
         }
     }
@@ -350,13 +377,13 @@ Game.Init = function () {
     }
 
     Game.sellShare = function (share) {
-        if (share.amount <= 0) {
+        if (share.owned <= 0) {
             Game.MessageBox('Nie można już więcej sprzedać', 2);
         }
         else {
-            share.amount--;
+            share.owned--;
             Game.GetRawMoney(share.price);
-            Game.stockmarketBalance += share.price;
+            Game.stockmarket.balance += share.price;
             share.invested -= share.price;
         }
     }
@@ -386,7 +413,6 @@ Game.Init = function () {
             Game.Spend(price);
             what.amount += afford;
         }
-
     }
 
     Game.sellAll = function (what, _return) {
@@ -402,24 +428,31 @@ Game.Init = function () {
             Game.GetRawMoney(money);
             what.amount = 0;
         }
-
     }
 
     Game.buyAllShares = function (share) {
-        var amount = parseInt(Game.money / share.price);
-        var money = share.price * amount;
-        share.invested += money;
-        share.amount = amount;
-        Game.Spend(money);
-        Game.stockmarketBalance -= money;
+		if(Game.money < share.price) {
+			Game.MessageBox('You don\'t have enough money', 2);
+		}
+		else {
+			var owned = parseInt(Game.money / share.price);
+			var money = share.price * owned;
+			share.invested += money;
+			share.owned = owned;
+			Game.Spend(money);
+			Game.stockmarket.balance -= money;
+			Game.MessageBox('You have bought <strong>' + Beautify(owned) + '</strong> shares for <strong class="money-bg">' + Beautify(money) + '</strong>', 0);
+		}
     }
 
     Game.sellAllShares = function (share) {
-        var money = share.price * share.amount;
-        share.amount = 0;
+		var owned = share.owned;
+        var money = share.price * share.owned;
+        share.owned = 0;
         share.invested = 0;
         Game.GetRawMoney(money);
-        Game.stockmarketBalance += money;
+        Game.stockmarket.balance += money;
+		Game.MessageBox('You have sold <strong>' + Beautify(owned) + '</stong> shares for <strong class="money-bg">' + Beautify(money) + '</strong>', 0);
     }
 
     //TOOLTIPS
@@ -445,7 +478,7 @@ Game.Init = function () {
                 });
                 offscreen = true;
             }
-            if (tooltip.outerHeight() + Game.mouseY > $(window).height()) {
+            if (tooltip.outerHeight() + Game.mouseY > $(window).height()) { //FIX
                 tooltip.css({
                     'top': $(window).height() - tooltip.outerHeight() - 30,
                 });
@@ -515,6 +548,7 @@ Game.Init = function () {
     }
 
     Game.SetOptions = function () {
+		$('#lottery-regular-price').prop('checked', true);
         Game.fps = Game.options.fps;
         $('#option-fps').val(Game.options.fps);
         $('#option-autosave').prop('checked', Game.options.autoSave);
@@ -562,7 +596,7 @@ Game.Init = function () {
         this.maxChangePercent = maxChangePercent;
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
-        this.amount = 0;
+        this.owned = 0;
         this.invested = 0;
         this.timeOn = 0;
     }
@@ -753,6 +787,13 @@ Game.Init = function () {
             function () {
                 Game.incomeMultiplier += 90;
             }));
+			
+	Game.upgrades.push(new Game.Upgrade(108, 'Upgrade of unknown', 'Increases the income multiplier by a random number ranging from <strong>100 to 200</strong>', 5000000000000000,
+            function () {
+				var multiplier = getRandom(100, 200);
+                Game.incomeMultiplier += multiplier;
+				Game.MessageBox('Your income multiplier has been increased by <strong>' + multiplier + '</strong', 0)
+            }));
 
     Game.upgrades.push(new Game.Upgrade(30, 'The real hellish upgrade', 'Increases the income multiplier by <strong>666%</strong>', 6666666666666666666,
             function () {
@@ -774,52 +815,62 @@ Game.Init = function () {
                 Game.bonusMultiplier *= 2;
             }));
 
-    Game.upgrades.push(new Game.Upgrade(91, 'Faster than light', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 30000000000000,
+    Game.upgrades.push(new Game.Upgrade(91, 'Faster than light', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 3000000000000,
             function () {
                 Game.ultraBonusMultiplier *= 2;
             }));
 
-    Game.upgrades.push(new Game.Upgrade(97, 'Faster than light #2', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 3000000000000000,
+    Game.upgrades.push(new Game.Upgrade(97, 'Faster than light #2', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 300000000000000,
             function () {
                 Game.ultraBonusMultiplier *= 2;
             }));
 			
-    Game.upgrades.push(new Game.Upgrade(98, 'Faster than light #3', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 3000000000000000000,
+    Game.upgrades.push(new Game.Upgrade(98, 'Faster than light #3', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 300000000000000000,
             function () {
                 Game.ultraBonusMultiplier *= 2;
             }));
 			
-    Game.upgrades.push(new Game.Upgrade(99, 'Faster than light #4', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 30000000000000000000,
+    Game.upgrades.push(new Game.Upgrade(99, 'Faster than light #4', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 3000000000000000000,
             function () {
                 Game.ultraBonusMultiplier *= 2;
             }));
 		
-    Game.upgrades.push(new Game.Upgrade(100, 'Faster than light #5', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 300000000000000000000,
+    Game.upgrades.push(new Game.Upgrade(100, 'Faster than light #5', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 30000000000000000000,
             function () {
                 Game.ultraBonusMultiplier *= 2;
             }));
+			
+	Game.upgrades.push(new Game.Upgrade(101, 'Faster than light #6', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 300000000000000000000,
+            function () {
+                Game.ultraBonusMultiplier *= 2;
+            }));
+			
+	Game.upgrades.push(new Game.Upgrade(104, 'Faster than light #7', 'Increases the <strong>ultra</strong> bonus multiplier by <strong>2 times</strong>', 3000000000000000000000,
+            function () {
+                Game.ultraBonusMultiplier *= 2;
+            }, false, true));
 
-    Game.upgrades.push(new Game.Upgrade(92, 'Give me some chances #1', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 30000000000000,
+    Game.upgrades.push(new Game.Upgrade(92, 'Give me some chances #1', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 3000000000000,
             function () {
                 Game.ultraBonusProbability += 1;
             }));
 
-    Game.upgrades.push(new Game.Upgrade(93, 'Give me some chances #2', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 300000000000000,
+    Game.upgrades.push(new Game.Upgrade(93, 'Give me some chances #2', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 30000000000000,
             function () {
                 Game.ultraBonusProbability += 1;
             }));
 
-    Game.upgrades.push(new Game.Upgrade(94, 'Give me some chances #3', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 30000000000000000,
+    Game.upgrades.push(new Game.Upgrade(94, 'Give me some chances #3', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 3000000000000000,
             function () {
                 Game.ultraBonusProbability += 1;
             }));
 			
-    Game.upgrades.push(new Game.Upgrade(95, 'Give me some chances #4', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 300000000000000000,
+    Game.upgrades.push(new Game.Upgrade(95, 'Give me some chances #4', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 30000000000000000,
             function () {
                 Game.ultraBonusProbability += 1;
             }));
 			
-    Game.upgrades.push(new Game.Upgrade(96, 'Give me some chances #5', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 30000000000000000000,
+    Game.upgrades.push(new Game.Upgrade(96, 'Give me some chances #5', 'Increases the <strong>ultra</strong> bonus probability by <strong>a little</strong>', 3000000000000000000,
             function () {
                 Game.ultraBonusProbability += 1;
             }));
@@ -830,58 +881,58 @@ Game.Init = function () {
             }, false, true));
 
     Game.upgrades.push(new Game.Upgrade(35, 'Longer bonus', 'Increases the bonus duration time by <strong>10 seconds</strong>', 30000000000,
-                function () {
-                    Game.bonusTime += 10;
-                    Game.bonusTimeRemaining += 10;
-                }));
+			function () {
+				Game.bonusTime += 10;
+				Game.bonusTimeRemaining += 10;
+			}));
 
     Game.upgrades.push(new Game.Upgrade(36, 'Longer bonus #2', 'Increases the bonus duration time by <strong>10 seconds</strong>', 6000000000000,
-                function () {
-                    Game.bonusTime += 10;
-                    Game.bonusTimeRemaining += 10;
-                }));
+			function () {
+				Game.bonusTime += 10;
+				Game.bonusTimeRemaining += 10;
+			}));
 
     Game.upgrades.push(new Game.Upgrade(37, 'Longer bonus #3', 'Increases the bonus duration time by <strong>20 seconds</strong>', 9000000000000,
-                function () {
-                    Game.bonusTime += 20;
-                    Game.bonusTimeRemaining += 20;
-                }));
+			function () {
+				Game.bonusTime += 20;
+				Game.bonusTimeRemaining += 20;
+			}));
 
     Game.upgrades.push(new Game.Upgrade(38, 'Longer bonus #4', 'Increases the bonus duration time by <strong>30 seconds</strong>', 120000000000000,
-                function () {
-                    Game.bonusTime += 30;
-                    Game.bonusTimeRemaining += 30;
-                }));
+			function () {
+				Game.bonusTime += 30;
+				Game.bonusTimeRemaining += 30;
+			}));
 
     Game.upgrades.push(new Game.Upgrade(39, 'Longer bonus #5', 'Increases the bonus duration time by <strong>50 seconds</strong>', 1500000000000000,
-                function () {
-                    Game.bonusTime += 50;
-                    Game.bonusTimeRemaining += 50;
-                }));
+			function () {
+				Game.bonusTime += 50;
+				Game.bonusTimeRemaining += 50;
+			}));
 
     Game.upgrades.push(new Game.Upgrade(40, 'Eternal bonus', 'Increases the bonus duration time by <strong>100 seconds</strong>', 6666666666666666666,
-                function () {
-                    Game.bonusTime += 100;
-                    Game.bonusTimeRemaining += 100;
-                }, false, true));
+			function () {
+				Game.bonusTime += 100;
+				Game.bonusTimeRemaining += 100;
+			}, false, true));
 
     Game.upgrades.push(new Game.Upgrade(41, 'Money smells good', 'Lowers the time when you get money from the bank by <strong>10 seconds</strong>', 50000000000,
-                function () {
-                    Game.bank.moneyIncreaseTime -= 10;
-                    Game.bank.remainingTime -= 10;
-                }));
+			function () {
+				Game.bank.moneyIncreaseTime -= 10;
+				Game.bank.remainingTime -= 10;
+			}));
 
     Game.upgrades.push(new Game.Upgrade(42, 'Money smells good #2', 'Lowers the time when you get money from the bank by <strong>10 seconds</strong>', 75000000000,
-                function () {
-                    Game.bank.moneyIncreaseTime -= 10;
-                    Game.bank.remainingTime -= 10;
-                }));
+			function () {
+				Game.bank.moneyIncreaseTime -= 10;
+				Game.bank.remainingTime -= 10;
+			}));
 
     Game.upgrades.push(new Game.Upgrade(43, 'Money smells good #3', 'Lowers the time when you get money from the bank by <strong>10 seconds</strong>', 100000000000,
-                function () {
-                    Game.bank.moneyIncreaseTime -= 10;
-                    Game.bank.remainingTime -= 10;
-                }));
+			function () {
+				Game.bank.moneyIncreaseTime -= 10;
+				Game.bank.remainingTime -= 10;
+			}));
 
     Game.upgrades.push(new Game.Upgrade(44, 'More savings', 'Increases the interest rate by <strong>3</strong>', 5000000000,
             function () {
@@ -911,6 +962,36 @@ Game.Init = function () {
     Game.upgrades.push(new Game.Upgrade(89, 'Owing less #3', 'Reduces the loan rate by <strong>5</strong>', 100000000000000000,
             function () {
                 Game.bank.loanRate -= 5;
+            }));
+	
+	Game.upgrades.push(new Game.Upgrade(50, 'Just can\'t wait', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 77777777777,
+            function () {
+                Game.bonusMinTime -= 10;
+                Game.bonusMaxTime -= 10;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade(51, 'Just can\'t wait #2', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 777777777777,
+            function () {
+                Game.bonusMinTime -= 10;
+                Game.bonusMaxTime -= 10;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade(52, 'Just can\'t wait #3', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 7777777777777,
+            function () {
+                Game.bonusMinTime -= 10;
+                Game.bonusMaxTime -= 10;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade(53, 'Just can\'t wait #4', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 77777777777777,
+            function () {
+                Game.bonusMinTime -= 10;
+                Game.bonusMaxTime -= 10;
+            }));
+
+    Game.upgrades.push(new Game.Upgrade(54, 'Just can\'t wait #5', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 777777777777777,
+            function () {
+                Game.bonusMinTime -= 10;
+                Game.bonusMaxTime -= 10;
             }));
 
     Game.upgrades.push(new Game.Upgrade(47, 'Push the limit', 'Increases the bank cap by <strong>200%</strong>', 1000000000,
@@ -947,88 +1028,57 @@ Game.Init = function () {
             function () {
                 Game.lottery.numberRange -= 2;
             }, false, true));
-
-    Game.upgrades.push(new Game.Upgrade(50, 'Just can\'t wait', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 77777777777,
+			
+	Game.upgrades.push(new Game.Upgrade(72, 'Jackpot', 'Increases lottery pool multiplier by <strong>30%</strong>', 1000000000000,
             function () {
-                Game.bonusMinTime -= 10;
-                Game.bonusMaxTime -= 10;
-            }));
+                Game.lottery.poolMultiplier += 0.30;
+            }, false, true));
 
-    Game.upgrades.push(new Game.Upgrade(51, 'Just can\'t wait #2', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 777777777777,
+    Game.upgrades.push(new Game.Upgrade(84, 'No limits', 'Makes the lottery block time last <strong>1 second</strong>', 123456787654321,
             function () {
-                Game.bonusMinTime -= 10;
-                Game.bonusMaxTime -= 10;
-            }));
-
-    Game.upgrades.push(new Game.Upgrade(52, 'Just can\'t wait #3', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 7777777777777,
+                Game.lottery.blockTime = 1;
+            }, false, true));
+			
+	Game.upgrades.push(new Game.Upgrade(105, 'Stock market rush #1', 'Decreases the stock market update time by <strong>5 seconds</strong>', 5555555555,
             function () {
-                Game.bonusMinTime -= 10;
-                Game.bonusMaxTime -= 10;
+                Game.stockmarket.updateTime -= 5;
             }));
-
-    Game.upgrades.push(new Game.Upgrade(53, 'Just can\'t wait #4', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 77777777777777,
+			
+	Game.upgrades.push(new Game.Upgrade(106, 'Stock market rush #2', 'Decreases the stock market update time by <strong>5 seconds</strong>', 5555555555555,
             function () {
-                Game.bonusMinTime -= 10;
-                Game.bonusMaxTime -= 10;
+                Game.stockmarket.updateTime -= 5;
             }));
-
-    Game.upgrades.push(new Game.Upgrade(54, 'Just can\'t wait #5', 'Lowers the period of bonus occurrences by <strong>10 seconds</strong>', 777777777777777,
+			
+	Game.upgrades.push(new Game.Upgrade(107, 'Stock market rush #3', 'Decreases the stock market update time by <strong>5 seconds</strong>', 5555555555555555,
             function () {
-                Game.bonusMinTime -= 10;
-                Game.bonusMaxTime -= 10;
+                Game.stockmarket.updateTime -= 5;
             }));
+			
+    Game.upgrades.push(new Game.Upgrade(55, 'Buildings sale #1', 'Lowers the price of all buildings by <strong>10%</strong>', 1000000000));
 
-    Game.upgrades.push(new Game.Upgrade(55, 'Buildings sale #1', 'Lowers the price of all buildings by <strong>10%</strong>', 1000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(56, 'Buildings sale #2', 'Lowers the price of all buildings by <strong>10%</strong>', 10000000000));
 
-    Game.upgrades.push(new Game.Upgrade(56, 'Buildings sale #2', 'Lowers the price of all buildings by <strong>10%</strong>', 10000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(57, 'Buildings sale #3', 'Lowers the price of all buildings by <strong>10%</strong>', 100000000000));
 
-    Game.upgrades.push(new Game.Upgrade(57, 'Buildings sale #3', 'Lowers the price of all buildings by <strong>10%</strong>', 100000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(58, 'Buildings sale #4', 'Lowers the price of all buildings by <strong>10%</strong>', 1000000000000));
 
-    Game.upgrades.push(new Game.Upgrade(58, 'Buildings sale #4', 'Lowers the price of all buildings by <strong>10%</strong>', 1000000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(59, 'Buildings sale #5', 'Lowers the price of all buildings by <strong>10%</strong>', 10000000000000));
 
-    Game.upgrades.push(new Game.Upgrade(59, 'Buildings sale #5', 'Lowers the price of all buildings by <strong>10%</strong>', 10000000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(60, 'Minimum wage #1', 'Lowers the workers price by <strong>10%</strong>', 1000000000));
 
-    Game.upgrades.push(new Game.Upgrade(60, 'Minimum wage #1', 'Lowers the workers price by <strong>10%</strong>', 1000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(61, 'Minimum wage #2', 'Lowers the workers price by <strong>10%</strong>', 10000000000));
 
-    Game.upgrades.push(new Game.Upgrade(61, 'Minimum wage #2', 'Lowers the workers price by <strong>10%</strong>', 10000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(62, 'Minimum wage #3', 'Lowers the workers price by <strong>10%</strong>', 100000000000));
 
-    Game.upgrades.push(new Game.Upgrade(62, 'Minimum wage #3', 'Lowers the workers price by <strong>10%</strong>', 100000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(63, 'Minimum wage #4', 'Lowers the workers price by <strong>10%</strong>', 1000000000000));
 
-    Game.upgrades.push(new Game.Upgrade(63, 'Minimum wage #4', 'Lowers the workers price by <strong>10%</strong>', 1000000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(64, 'Minimum wage #5', 'Lowers the workers price by <strong>10%</strong>', 10000000000000));
 
-    Game.upgrades.push(new Game.Upgrade(64, 'Minimum wage #5', 'Lowers the workers price by <strong>10%</strong>', 10000000000000,
-           function () {
-           }));
+    Game.upgrades.push(new Game.Upgrade(65, 'Engineering getting cheap #1', 'Lowers the price of all upgrades by <strong>10%</strong>', 100000000000));
 
-    Game.upgrades.push(new Game.Upgrade(65, 'Engineering getting cheap #1', 'Lowers the price of all upgrades by <strong>10%</strong>', 100000000000,
-            function () {
-            }));
+    Game.upgrades.push(new Game.Upgrade(66, 'Engineering getting cheap #2', 'Lowers the price of all upgrades by <strong>10%</strong>', 1000000000000));
 
-    Game.upgrades.push(new Game.Upgrade(66, 'Engineering getting cheap #2', 'Lowers the price of all upgrades by <strong>10%</strong>', 1000000000000,
-            function () {
-            }));
-
-    Game.upgrades.push(new Game.Upgrade(67, 'Engineering getting cheap #3', 'Lowers the price of all upgrades by <strong>10%</strong>', 10000000000000,
-           function () {
-           }));
+    Game.upgrades.push(new Game.Upgrade(67, 'Engineering getting cheap #3', 'Lowers the price of all upgrades by <strong>10%</strong>', 10000000000000));
 
     Game.upgrades.push(new Game.Upgrade(68, 'Overhours #1', 'Increases the max workers efficiency by <strong>10%</strong>', 10000000000000,
            function () {
@@ -1044,6 +1094,23 @@ Game.Init = function () {
            function () {
                Game.workers.maxEfficiency += 10;
            }));
+		   
+	Game.upgrades.push(new Game.Upgrade(103, 'Use the whip', 'Workers work at <strong>500%</strong> efficiency for <strong>5 minutes</strong>. Each use reduces this effect by <strong>7%</strong>', 1000000000,
+            function () {
+                var data = this;
+                data.disabled = true;
+				var maxEfficiency = Game.workers.maxEfficiency;
+				Game.workers.maxEfficiency = 500 - (data.used * 7) < maxEfficiency ? maxEfficiency : 500 - (data.used * 7);
+                data.timeout = setTimeout(function () {
+                    data.disabled = false;
+                }, 5 * 60 * 1000);
+				$(window).on('beforeunload', function () {
+                    if (data.disabled) {
+                        Game.workers.maxEfficiency = maxEfficiency;
+                        Game.WriteSave(false, true);
+                    }
+                });
+            }, true));
 
     Game.upgrades.push(new Game.Upgrade(71, 'Mysterious upgrade', 'Dare to click?', 1000000000,
            function () {
@@ -1089,22 +1156,12 @@ Game.Init = function () {
            
            }, true, true));
 
-    Game.upgrades.push(new Game.Upgrade(72, 'Jackpot', 'Increases lottery pool multiplier by <strong>30%</strong>', 1000000000000,
-            function () {
-                Game.lottery.poolMultiplier += 0.30;
-            }, false, true));
-
-    Game.upgrades.push(new Game.Upgrade(84, 'No limits', 'Makes the lottery block time last <strong>1 second</strong>', 123456787654321,
-            function () {
-                Game.lottery.blockTime = 1;
-            }, false, true));
-
     Game.upgrades.push(new Game.Upgrade(90, 'Bonus on demand', 'Lets you trigger </strong>bonus</strong> whenever you want', 1000000000,
             function () {
                 Game.bonus = true;
                 Game.bonusCount++;
                 var rand = getRandom(1, 100);
-                var ultraBonus = rand > (100 - Game.ultraBonusProbability + 1) ? true : false;
+                var ultraBonus = rand > (100 - Game.ultraBonusProbability + 2) ? true : false;
                 if (ultraBonus) {
                     Game.ultraBonus = true;
                     Game.ultraBonusCount++;
@@ -1123,6 +1180,12 @@ Game.Init = function () {
             function () {
                 Game.tax -= 5;
             }));
+			
+	Game.upgrades.push(new Game.Upgrade(102, 'Money reclaim', 'Get all your money spent on tax back.', 100,
+            function () {
+                Game.GetRawMoney(Game.moneySpentOnTax);
+				Game.moneySpentOnTax = 0;
+            }));
 
     Game.upgrades.push(new Game.Upgrade(75, 'Tax Be Gone', 'Freezes tax rate for <strong>5 minutes</strong>', 123456789,
             function () {
@@ -1138,7 +1201,7 @@ Game.Init = function () {
                         Game.WriteSave(false, true);
                     }
                 });
-                setTimeout(function () {
+                data.timeout = setTimeout(function () {
                     Game.tax = tax;
                     data.disabled = false;
                     Game.GetUpgrade('Riot').disabled = false;
@@ -1164,7 +1227,6 @@ Game.Init = function () {
                             else {
                                 Game.GetRawMoney(money);
                                 Game.moneyEarned -= money;
-                                //Game.allMoneyEarned -= money;
                                 Game.MessageBox('You restored <strong class="money-bg">' + Beautify(money) + '</strong>', 0);
                                 Game.ClosePrompt();
                             }
@@ -1174,12 +1236,15 @@ Game.Init = function () {
                 getId('restoration-value').focus();
             }, true));
 
-    //Game.upgrades.sort(sortByNumber); //SORTOWANIE UPGRADEOW OD NAJNIZSZEJ CENY
-
     Game.shares = [];
-    Game.shares.push(new Game.Share(1, 'Company', 50, 10, 30 , 30, 70));
-    Game.shares.push(new Game.Share(2, 'Dynamik Pharmacies', 75, 5, 45, 50, 120));
-
+    Game.shares.push(new Game.Share(1, 'Cheap Coal', 1000, 2, 10 , 750, 1270));
+    Game.shares.push(new Game.Share(2, 'Universal Resources', 20000, 1, 8, 18000, 22500));
+	Game.shares.push(new Game.Share(3, 'Coal Energy', 500000, 3, 7, 460000, 600000));
+	Game.shares.push(new Game.Share(4, 'American Mining', 10000000, 2, 6, 7000000, 13000000));
+	Game.shares.push(new Game.Share(5, 'Chinese Coal Group', 7000000000000, 2, 5, 6000000000000, 8000000000000));
+	Game.shares.push(new Game.Share(6, 'EnergyCore', 8000000000000000, 4, 7, 6500000000000000, 9000000000000000));
+	Game.shares.push(new Game.Share(7, 'X Enterprises', 100000000000000000000, 5, 9, 70000000000000000000, 130000000000000000000));
+	
     Game.achievements = [];
 
     Game.achievements.push(new Game.Achievement(1, 'Little business', 'Earn <strong>$' + Beautify(10000) + '</strong>'));
@@ -1228,7 +1293,7 @@ Game.Init = function () {
         2 - red
         */
         Game.MessageBox = function (text, type) {
-            $('.view').each(function (i) {
+            $('.view').each(function () {
                 if ($(this).css('display') == 'block') {
                     var color = '';
                     switch (type) {
@@ -1267,24 +1332,16 @@ Game.Init = function () {
         }
 
         //UPGRADES
-
+		$('#upgrades-list').append('<div class="upgrades-delimiter">Income multiplier</div>');
         for (var i = 0; i < Game.upgrades.length; i++) {
-            $('#upgradesList').append('<div id=upgrade' + (i + 1) + ' class="upgrade active-upgrade"/>');
-            Game.addTooltip('#upgrade' + (i + 1), '<div>' + Game.upgrades[i].name + (Game.upgrades[i].multiple ? ' <strong>Multiple use (' + Game.upgrades[i].used + ' times used)</strong>' : '') + '</div><div>' + Game.upgrades[i].desc + '</div><div class="money-bg"><strong>' + Beautify(Game.upgrades[i].price) + '<div>');
+            $('#upgrades-list').append('<div id=upgrade' + (i + 1) + ' class="upgrade active-upgrade"/>');
+			if(Game.upgrades.indexOf(Game.GetUpgrade('Bonus booster')) == i+1) $('#upgrades-list').append('<div class="upgrades-delimiter">Bonus</div>');
+			if(Game.upgrades.indexOf(Game.GetUpgrade('Money smells good')) == i+1) $('#upgrades-list').append('<div class="upgrades-delimiter">Bank</div>');
+			if(Game.upgrades.indexOf(Game.GetUpgrade('Greater chance')) == i+1) $('#upgrades-list').append('<div class="upgrades-delimiter">Lottery</div>');
+			if(Game.upgrades.indexOf(Game.GetUpgrade('Stock market rush #1')) == i+1) $('#upgrades-list').append('<div class="upgrades-delimiter">Stock market</div>');
+			if(Game.upgrades.indexOf(Game.GetUpgrade('Buildings sale #1')) == i+1) $('#upgrades-list').append('<div class="upgrades-delimiter">Miscellaneous</div>');
+            Game.addTooltip('#upgrade' + (i + 1), '<div>' + Game.upgrades[i].name + (Game.upgrades[i].multiple ? ' <strong>Multiple use (used ' + Game.upgrades[i].used + ' times)</strong>' : '') + '</div><div>' + Game.upgrades[i].desc + '</div><div class="money-bg"><strong>' + Beautify(Game.upgrades[i].price) + '<div>');
         }
-
-        //LOTTERY
-
-        $('#lottery .content').append('<div id="lottery-info">Enter 5 numbers that range from 1 to ' + Game.lottery.numberRange + '</div>');
-        $('#lottery .content').append('<div id="lottery-pool"/>');
-        $('#lottery .content').append('<div id="ticket-price"/>');
-        $('#lottery .content').append('<div id="lottery-numbers"/>');
-
-        for (var i = 0; i < 5; i++) {
-            $('#lottery .content').append('<input class="lottery-number" type="text"/>');
-        }
-
-        $('#lottery .content').append('<button id="play-lottery">Play</button>');
 
         //STOCK MARKET
 
@@ -1310,7 +1367,7 @@ Game.Init = function () {
         $('#statistics .content').append('<table id="statistics-table"/>');
 
         createRow('Playing time');
-        createRow('Money earned during the entire gameplay');
+        createRow('Money earned during entire gameplay');
         createRow('Money earned since last reset');
         createRow('Income per minute');
         createRow('Income per hour');
@@ -1318,6 +1375,7 @@ Game.Init = function () {
         createRow('Times you reset');
         createRow('Money spent on upgrades');
         createRow('Times got bonus');
+		createRow('Times got ultra bonus');
         createRow('Money saved in bank');
         createRow('Bank cap');
         createRow('Money spent on tax');
@@ -1325,14 +1383,14 @@ Game.Init = function () {
         createRow('Lottery losses');
         createRow('Lottery win percentage');
         createRow('Lottery balance');
-        createRow('Spent on lottery tickets');
+        createRow('Money spent on lottery tickets');
 
         for (var i = 0; i < Game.lottery.scores.length; i++) {
             createRow('Times scored ' + [i + 1] + (i + 1 == 1 ? ' number' : ' numbers'));
         }
 
-        createRow('Total owned buildings');
-        createRow('Salary paid to workers');
+        createRow('Total buildings owned');
+        createRow('Total salary paid to workers');
         createRow('Cumulative income from workers');
         createRow('Cumulative gains from workers');
 
@@ -1365,7 +1423,7 @@ Game.Init = function () {
 
     //LOTTERY
 
-    Game.StartLottery = function (numbers) {
+    Game.StartLottery = function (numbers, regular) {
         var randomNumbers = [];
         for (var i = 0; i < 5;) {
             randomNumbers[i] = getRandom(1, Game.lottery.numberRange);
@@ -1389,11 +1447,12 @@ Game.Init = function () {
             }
         }
 
-        var prizes = [0.002, 0.003, 10, 40, 100];
+        var prizes = [0.00035, 0.001, 7, 25, 100];
 
         if (won) {
             Game.lottery.timesWon++;
-            var prize = Game.subtractTax((Game.lottery.pool) * (prizes[rightnumbers - 1] / 100));
+			
+            var prize = Game.subtractTax((Game.lottery.pool) * (!regular ? Math.pow((parseInt($('#lottery-custom-price-input').val()) / Game.lottery.ticket), 1.01) : 1) *(prizes[rightnumbers - 1] / 100));
             Game.MessageBox('Wygrałeś: <strong class="money-bg">' + Beautify(prize) + '</strong>. <br/>Trafiłeś ' + rightnumbers + ' liczbe/y', 0);
             Game.GetMoney(prize);
             Game.lottery.balance += prize;
@@ -1420,17 +1479,17 @@ Game.Init = function () {
     }
 
     Game.CalculateShareProfit = function (share) {
-        return share.amount * share.price;
+        return share.owned * share.price;
     }
 
     Game.CalculateShareProfitPercentage = function (share) {
-        return ((share.amount * share.price - share.invested) / share.invested * 100).toFixed(2);
+        return ((share.owned * share.price - share.invested) / share.invested * 100).toFixed(2);
     }
 
     Game.GetMyShares = function () {
         var shares = [];
         for (var i = 0; i < Game.shares.length; i++) {
-            if (Game.shares[i].amount > 0) shares.push(Game.shares[i]);
+            if (Game.shares[i].owned > 0) shares.push(Game.shares[i]);
         }
         return shares;
     }
@@ -1549,7 +1608,6 @@ Game.Init = function () {
         str += 'money=' + Game.money + '|';
         str += 'incomeMultiplier=' + Game.incomeMultiplier + '|';
         str += 'spentOnUpgrades=' + Game.spentOnUpgrades + '|';
-        str += 'stockmarketBalance=' + Game.stockmarketBalance + '|';
         str += 'workers.amount=' + Game.workers.amount + '|';
         str += 'workers.salaryPaid=' + Game.workers.salaryPaid + '|';
         str += 'workers.maxEfficiency=' + Game.workers.maxEfficiency + '|';
@@ -1569,6 +1627,7 @@ Game.Init = function () {
         str += 'bank.difference=' + Game.bank.difference + '|';
         str += 'bank.depositedMoney=' + Game.bank.depositedMoney + '|';
         str += 'bank.moneyCap=' + Game.bank.moneyCap + '|';
+		str += 'bank.borrowedMoney=' + Game.bank.borrowedMoney + '|';
         str += 'bank.loanDebt=' + Game.bank.loanDebt + '|';
         str += 'bank.loanRate=' + Game.bank.loanRate + '|';
         str += 'bank.loanTime=' + Game.bank.loanTime + '|';
@@ -1582,6 +1641,9 @@ Game.Init = function () {
         str += 'lottery.timesWon=' + Game.lottery.timesWon + '|';
         str += 'lottery.timesLost=' + Game.lottery.timesLost + '|';
         str += 'lottery.blockTime=' + Game.lottery.blockTime + '|';
+		str += 'stockmarket.balance=' + Game.stockmarket.balance + '|';
+		str += 'stockmarket.updateTime=' + Game.stockmarket.updateTime + '|';
+		str += 'stockmarket.remainingTime=' + Game.stockmarket.remainingTime + '|';
         str += 'tax=' + Game.tax + '|';
         str += 'moneySpentOnTax=' + Game.moneySpentOnTax + '|';
         str += 'options.fps=' + Game.options.fps + '|';
@@ -1622,7 +1684,7 @@ Game.Init = function () {
         for (var i = 0; i < Game.shares.length; i++) {
             str += 'share-' + Game.shares[i].id + '-price=' + Game.shares[i].price + '|';
             str += 'share-' + Game.shares[i].id + '-lastPrice=' + Game.shares[i].lastPrice + '|';
-            str += 'share-' + Game.shares[i].id + '-amount=' + Game.shares[i].amount + '|';
+            str += 'share-' + Game.shares[i].id + '-owned=' + Game.shares[i].owned + '|';
             str += 'share-' + Game.shares[i].id + '-invested=' + Game.shares[i].invested + '|';
         }
 
@@ -1681,7 +1743,6 @@ Game.Init = function () {
             Game.money = parseFloat(Game.Save.GetKey('money'));
             Game.incomeMultiplier = parseFloat(Game.Save.GetKey('incomeMultiplier'));
             Game.spentOnUpgrades = parseFloat(Game.Save.GetKey('spentOnUpgrades'));
-            Game.stockmarketBalance = parseFloat(Game.Save.GetKey('stockmarketBalance', Game.stockmarketBalance));
             Game.workers.amount = parseFloat(Game.Save.GetKey('workers.amount'));
             Game.workers.salaryPaid = parseFloat(Game.Save.GetKey('workers.salaryPaid'));
             Game.workers.maxEfficiency = parseInt(Game.Save.GetKey('workers.maxEfficiency'));
@@ -1703,6 +1764,7 @@ Game.Init = function () {
             Game.bank.difference = parseFloat(Game.Save.GetKey('bank.difference'));
             Game.bank.depositedMoney = parseFloat(Game.Save.GetKey('bank.depositedMoney'));
             Game.bank.moneyCap = parseFloat(Game.Save.GetKey('bank.moneyCap'));
+			Game.bank.borrowedMoney = parseFloat(Game.Save.GetKey('bank.borrowedMoney', Game.bank.borrowedMoney));
             Game.bank.loanDebt = parseFloat(Game.Save.GetKey('bank.loanDebt', Game.bank.loanDebt));
             Game.bank.loanRate = parseInt(Game.Save.GetKey('bank.loanRate', Game.bank.loanRate));
             Game.bank.loanTime = parseInt(Game.Save.GetKey('bank.loanTime', Game.bank.loanTime));
@@ -1716,6 +1778,9 @@ Game.Init = function () {
             Game.lottery.timesWon = parseInt(Game.Save.GetKey('lottery.timesWon'));
             Game.lottery.timesLost = parseInt(Game.Save.GetKey('lottery.timesLost'));
             Game.lottery.blockTime = parseInt(Game.Save.GetKey('lottery.blockTime', Game.lottery.blockTime));
+			Game.stockmarket.balance = parseFloat(Game.Save.GetKey('stockmarket.balance', Game.stockmarket.balance));
+			Game.stockmarket.updateTime = parseFloat(Game.Save.GetKey('stockmarket.updateTime', Game.stockmarket.updateTime));
+			Game.stockmarket.remainingTime = parseFloat(Game.Save.GetKey('stockmarket.remainingTime', Game.stockmarket.remainingTime));
             Game.tax = parseInt(Game.Save.GetKey('tax'));
             Game.moneySpentOnTax = parseFloat(Game.Save.GetKey('moneySpentOnTax'));
             Game.options.fps = parseInt(Game.Save.GetKey('options.fps', Game.options.fps));
@@ -1724,8 +1789,6 @@ Game.Init = function () {
             Game.options.numbers = parseInt(Game.Save.GetKey('options.numbers', Game.options.numbers));
             Game.allMoneyEarned = parseFloat(Game.Save.GetKey('allMoneyEarned', Game.allMoneyEarned));
             Game.resetCount = parseInt(Game.Save.GetKey('resetCount', Game.resetCount));
-
-            Game.SetOptions();
 
             for (var i = 0; i < Game.lottery.scores.length; i++) {
                 Game.lottery.scores[i] = parseInt(Game.Save.GetKey('lottery.scores-' + i))
@@ -1752,7 +1815,7 @@ Game.Init = function () {
             for (var i = 0; i < Game.shares.length; i++) {
                 Game.shares[i].price = parseFloat(Game.Save.GetKey('share-' + Game.shares[i].id + '-price', Game.shares[i].price));
                 Game.shares[i].lastPrice = parseFloat(Game.Save.GetKey('share-' + Game.shares[i].id + '-lastPrice', Game.shares[i].lastPrice));
-                Game.shares[i].amount = parseInt(Game.Save.GetKey('share-' + Game.shares[i].id + '-amount', Game.shares[i].amount));
+                Game.shares[i].owned = parseInt(Game.Save.GetKey('share-' + Game.shares[i].id + '-owned', Game.shares[i].owned));
                 Game.shares[i].invested = parseFloat(Game.Save.GetKey('share-' + Game.shares[i].id + '-invested', Game.shares[i].invested));
             }
 
@@ -1761,9 +1824,10 @@ Game.Init = function () {
                     Game.achievements[i].unlocked = true;
                 }
             }
-
+			
             console.info('Game has been loaded from a save');
         }
+		Game.SetOptions();
     }
 
     Game.Reset = function () {
@@ -1771,14 +1835,13 @@ Game.Init = function () {
         if (Game.moneyEarned >= 999999999999999) Game.UnlockAchievement('Where did it all go?');
 
         //Game.startTime = new Date();
-        Game.incomeMultiplier = 100 + (Math.pow(Game.allMoneyEarned, 1/6.9));
+        Game.incomeMultiplier = 100 + (Math.pow(Game.allMoneyEarned, 1/6.8));
         Game.moneyEarned = 0;
         Game.money = 25;
         Game.moneyIncome = 0;      
         Game.tax = 23;
         Game.moneySpentOnTax = 0;
         Game.spentOnUpgrades = 0;
-        Game.stockmarketBalance = 0;
         Game.workers.amount = 0;
         Game.workers.salaryPaid = 0;
         Game.workers.cumulativeGains = 0;
@@ -1787,7 +1850,7 @@ Game.Init = function () {
         Game.ultraBonus = false;
         Game.bonusMultiplier = 10;
         Game.ultraBonusMultiplier = 1337;
-        Game.ultraBonusProbability = 1;
+        Game.ultraBonusProbability = 3;
         Game.bonusCount = 0;
         Game.ultraBonusCount = 0;
         Game.bonusTime = 30;
@@ -1802,6 +1865,7 @@ Game.Init = function () {
         Game.bank.difference = 0;
         Game.bank.depositedMoney = 0;
         Game.bank.moneyCap = 200;
+		Game.bank.borrowedMoney = 0;
         Game.bank.loanDebt = 0;
         Game.bank.loanRate = 20;
         Game.bank.loanTime = 60 * 5;
@@ -1814,6 +1878,9 @@ Game.Init = function () {
         Game.lottery.ticketsCost = 0;
         Game.lottery.blockTime = 3;
         Game.lottery.scores = [0, 0, 0, 0, 0];
+		Game.stockmarket.balance = 0;
+		Game.stockmarket.updateTime = 20;
+		Game.stockmarket.remainingTime = Game.stockmarket.updateTime;
 
         Game.resetCount++;
 
@@ -1830,21 +1897,33 @@ Game.Init = function () {
         for (var i = 0; i < Game.upgrades.length; i++) {
             Game.upgrades[i].unlocked = false;
             Game.upgrades[i].used = 0;
+			Game.upgrades[i].disabled = false;
         }
-
-        /*Game.GetUpgrade('The real hellish upgrade').hidden = true;
-        Game.GetUpgrade('Jackpot').hidden = true;
-        Game.GetUpgrade('Final bonus booster').hidden = true;
-        Game.GetUpgrade('Mysterious upgrade').hidden = true;
-        Game.GetUpgrade('Eternal bonus').hidden = true;*/
-
-        Game.MessageBox('Game is reset', 0);
+		
+		for (var i = 0; i < Game.shares.length; i++) {
+            Game.shares[i].owned = 0;
+			Game.shares[i].invested = 0;
+        }
+		
+		clearTimeout(Game.GetUpgrade('Use the whip').timeout);
+		clearTimeout(Game.GetUpgrade('Tax Be Gone').timeout);
+		
+        Game.MessageBox('Game has been reset', 0);
     }
-
-    Game.LoadSave();
-    Game.Draw();
+ 
+    Game.Draw();//change order with loadsave fix
+	Game.LoadSave();
     Game.HandleEvents();
     Game.Loop();
+	preload(['res/arrow-down.png', 
+			'res/arrow-up.png',
+			'res/clock-small.png', 
+			'res/close-icon2.png',
+			'res/error.png',
+			'res/tick.png',
+			'res/upgrade-icon.png',
+			'res/warning.png',
+			'res/medal.png']);
 }
 
 /*=================================================
@@ -1909,6 +1988,7 @@ Game.HandleEvents = function () {
         if (Game.bank.remainingTime >= 1 && Game.bank.storedMoney > 0) Game.bank.remainingTime--;
         if (Game.bonus && Game.bonusTimeRemaining >= 1) Game.bonusTimeRemaining--;
         if (Math.floor(Game.bank.loanDebt) > 0 && Game.bank.loanRemainingTime >= 1) Game.bank.loanRemainingTime--;
+		if (Game.stockmarket.remainingTime >= 1) Game.stockmarket.remainingTime--;
     }, 1000);
 
     function autoSave() {
@@ -1917,8 +1997,8 @@ Game.HandleEvents = function () {
     }
     autoSave();
 
-    setInterval(function () {
-        if (!Game.bonus) {
+	function bonus() {
+		if (!Game.bonus) {
             Game.bonus = true;
             Game.bonusCount++;
             Game.bonusInterval = getRandom(Game.bonusMinTime, Game.bonusMaxTime);
@@ -1932,26 +2012,10 @@ Game.HandleEvents = function () {
                 Game.ultraBonus = false;
             }
         }
-    }, (Game.bonusInterval + Game.bonusTime) * 1000);
-
-    setInterval(function () {
-        for (var i = 0; Game.shares.length; i++) {
-            var rand = getRandom(0, 1);
-            var increase = rand == 0 ? true : false;
-            if (increase) {
-                Game.shares[i].lastPrice = Game.shares[i].price;
-                var maxPrice = Game.shares[i].price * (100 + Game.shares[i].maxChangePercent) / 100 > Game.shares[i].maxPrice ? Game.shares[i].maxPrice : Game.shares[i].price * (100 + Game.shares[i].maxChangePercent) / 100;
-                Game.shares[i].price = getRandom(Game.shares[i].price * (100 + Game.shares[i].minChangePercent) / 100, maxPrice);
-            }
-            else {
-                Game.shares[i].lastPrice = Game.shares[i].price;
-                var minPrice = Game.shares[i].price * (100 - Game.shares[i].minChangePercent) / 100 < Game.shares[i].minPrice ? Game.shares[i].minPrice : Game.shares[i].price * (100 - Game.shares[i].minChangePercent) / 100;
-                Game.shares[i].price = getRandom(minPrice, Game.shares[i].price * (100 - Game.shares[i].maxChangePercent) / 100);
-            }
-            Game.shares[i].timeOn++;
-        }
-    }, 1000);
-
+		setTimeout(bonus, (Game.bonusInterval + Game.bonusTime) * 1000);
+	}
+	setTimeout(bonus, Game.bonusInterval * 1000);
+	
     $('.upgrade-building').each(function (i) {
         $(this).on('click', function () {
             Game.buildings[i].tier++;
@@ -1994,13 +2058,13 @@ Game.HandleEvents = function () {
             }
             else if (Game.upgrades[i].multiple && !Game.upgrades[i].disabled) {
                 Game.Spend(Game.upgrades[i].price);
-                Game.upgrades[i].effect();
+                if(Game.upgrades[i].effect !== undefined) Game.upgrades[i].effect();
                 Game.upgrades[i].used++;
                 Game.spentOnUpgrades += Game.upgrades[i].price;
             }
             else if (!Game.upgrades[i].unlocked && !Game.upgrades[i].multiple && !Game.upgrades[i].disabled) {
                 Game.Spend(Game.upgrades[i].price);
-                Game.upgrades[i].effect();
+                if(Game.upgrades[i].effect !== undefined) Game.upgrades[i].effect();
                 Game.upgrades[i].unlocked = true;
                 Game.spentOnUpgrades += Game.upgrades[i].price;
             }
@@ -2024,7 +2088,7 @@ Game.HandleEvents = function () {
 
     $('.closebox').each(function (i) {
         $(this).on('click', function () {
-            $(this).parent().fadeOut(350);
+            $(this).parent().fadeOut(250);
         });
     }
     );
@@ -2039,7 +2103,7 @@ Game.HandleEvents = function () {
     });
 
     $('#option-fps').on('change', function () {
-        if (isNumeric($(this).val()) && parseInt($(this).val()) > 0 )
+        if (parseInt($(this).val()) > 0)
         {
             Game.options.fps = parseInt($(this).val());
             Game.fps = Game.options.fps;
@@ -2054,7 +2118,7 @@ Game.HandleEvents = function () {
     });
 
     $('#option-autosave-time').on('change', function () {
-        if (isNumeric($(this).val()) && parseInt($(this).val()) > 0) Game.options.autoSaveTime = parseInt($(this).val());
+        if (parseInt($(this).val()) > 0) Game.options.autoSaveTime = parseInt($(this).val());
     });
 
     $('#option-numbers').on('change', function () {   
@@ -2067,34 +2131,40 @@ Game.HandleEvents = function () {
     $('#sell-all-workers').on('click', function () { Game.sellAll(Game.workers) });
     $('#workers-pay').on('click', function () {
         if (getId('workers-salary').value != '' && isNumeric(getId('workers-salary').value))
-            Game.workers.Pay(parseInt((getId('workers-salary').value)));
+            Game.workers.Pay(Math.floor(parseInt(getId('workers-salary').value) * Game.workers.reqMoney / 100));
     });
+	
+	$('#workers-salary').on('change click', function() {
+		$(this).siblings('.slider-value').html(Beautify(Math.floor(($(this).val() * Game.workers.reqMoney / 100))));
+	});
 
     $('#workers-pay-max').on('click', function () {
-        if (Game.money >= Game.workers.reqMoney) {
-            Game.workers.Pay(Game.workers.reqMoney);
-            Game.MessageBox('You have paid <strong class="money-bg">' + Beautify(Game.workers.reqMoney) + '</strong>' , 0);
-        }
-        else {
-            Game.MessageBox('Nie masz wystarczająco pieniędzy', 2);
-        }
+		Game.workers.Pay(Game.workers.reqMoney);
     });
 
     $('#deposit').on('click', function () {
-        if (getId('bank-input').value != '')
-            Game.bank.Deposit(parseInt(getId('bank-input').value));
+            Game.bank.Deposit(Math.floor(parseInt(getId('bank-input').value) * Game.money / 100));
     });
+	
+	$('#bank-input').on('change click', function() {
+		$(this).siblings('.slider-value').html(Beautify(Math.floor(($(this).val() * Game.money / 100))));
+	});
+	
     $('#withdraw').on('click', function () {
         if (getId('bank-input').value != '')
-            Game.bank.Withdraw(parseInt(getId('bank-input').value));
+            Game.bank.Withdraw(Math.floor(parseInt(getId('bank-input').value) * Game.money / 100));
     });
     $('#deposit-all').on('click', function () { Game.bank.Deposit(Game.money); });
     $('#withdraw-all').on('click', function () { Game.bank.Withdraw(Game.bank.storedMoney); });
 
     $('#borrow').on('click', function () {
         if (getId('loan-amount').value != '' && isNumeric(getId('loan-amount').value))
-            Game.bank.borrow(parseInt(getId('loan-amount').value));
+            Game.bank.borrow(Math.floor(parseInt(getId('loan-amount').value * Game.bank.maxLoan / 100)));
     });
+	
+	$('#loan-amount').on('change click', function() {
+		$(this).siblings('.slider-value').html(Beautify(Math.floor(($(this).val() * Game.bank.maxLoan / 100))));
+	});
 
     $('#borrow-max').on('click', function () {
             Game.bank.borrow(Game.bank.maxLoan - Game.bank.loanDebt);
@@ -2102,22 +2172,43 @@ Game.HandleEvents = function () {
 
     $('#payback').on('click', function () {
         if (getId('payback-amount').value != '' && isNumeric(getId('payback-amount').value))
-            Game.bank.payback(parseInt(getId('payback-amount').value));
+            Game.bank.payback(Math.floor(parseInt(getId('payback-amount').value * Game.bank.loanDebt / 100)));
     });
+	
+	$('#payback-amount').on('change click', function() {
+		$(this).siblings('.slider-value').html(Beautify(Math.floor(($(this).val() * Game.bank.loanDebt / 100))));
+	});
+
 
     $('#payback-all').on('click', function () {
             Game.bank.payback(Game.bank.loanDebt);
     });
-
+	
+	$('#lottery-max-custom-price').on('click', function () {
+        $('#lottery-custom-price-input').val(Math.floor(Game.money));
+    });
+	
     $('#play-lottery').on('click', function () {
         var numbers = [];
         $('.lottery-number').each(function () {
             numbers.push($(this).val());
-        });
-        var repeated = false;
+        });    
+		var regular = false;
         var empty = false;
+		var notInRange = false;
+		var repeated = false;
 
-        for (var i = 0; i < numbers.length; i++) {
+        $('.lottery-number').each(function () {
+            if ($(this).val() == '') {
+                empty = true;
+            }
+			if ($(this).val() > Game.lottery.numberRange || $(this).val() < 1) {
+                notInRange = true;
+            }
+			//return false;
+        });
+		
+		for (var i = 0; i < numbers.length; i++) {
             for (var j = 0; j < i; j++) {
                 if (numbers[j] == numbers[i]) {
                     repeated = true;
@@ -2125,18 +2216,15 @@ Game.HandleEvents = function () {
                 }
             }
         }
-
-        $('.lottery-number').each(function () {
-            if ($(this).val() == '') {
-                empty = true;
-                return false;
-            }
-        });
-        if (Game.money < Game.lottery.ticket) {
-            Game.MessageBox('Nie masz wystarczajaco pieniedzy', 2);
-        }
+		
+		if(!Game.lottery.pool > 0) {
+			Game.MessageBox('Brak pieniędzy w puli', 2);
+		}
         else if (empty) {
             Game.MessageBox('Nie podałeś numerów', 2);
+        }
+		else if (notInRange) {
+            Game.MessageBox('Jedna lub więcej liczb nie mieści się w dozwolonym zakresie ', 2);
         }
         else if (repeated) {
             Game.MessageBox('Podane liczby nie mogą się powtarzać', 2);
@@ -2144,11 +2232,24 @@ Game.HandleEvents = function () {
         else if (Game.lottery.blocked) {
             Game.MessageBox('Musisz odczekać ' + Game.lottery.blockTime + ' sekund', 2);
         }
-        else {
-            Game.Spend(Game.lottery.ticket);
-            Game.lottery.ticketsCost += Game.lottery.ticket;
-            Game.StartLottery(numbers);
-        }
+        else if ($('#lottery-regular-price').prop('checked') && Game.lottery.ticket > 0) {
+			if (Game.money < Game.lottery.ticket) Game.MessageBox('Nie masz wystarczajaco pieniedzy', 2);
+			else {
+				regular = true;
+				Game.Spend(Game.lottery.ticket);
+				Game.lottery.ticketsCost += Game.lottery.ticket;
+				Game.StartLottery(numbers, regular);
+			}
+		}
+		else if(isNumeric($('#lottery-custom-price-input').val()) && parseInt($('#lottery-custom-price-input').val()) > 0){
+			if (Game.money < parseInt($('#lottery-custom-price-input').val())) Game.MessageBox('Nie masz wystarczajaco pieniedzy', 2);
+			else {
+				Game.Spend(parseInt($('#lottery-custom-price-input').val()));
+				Game.lottery.ticketsCost += parseInt($('#lottery-custom-price-input').val());
+				Game.StartLottery(numbers, regular);
+			}
+		}
+        
     });
 
     console.info('Events initialized');
@@ -2220,10 +2321,7 @@ Game.UIUpdate = function () {
 
     //UPGRADES
     if (getId('upgrades').style.display == 'block') {
-        if (Game.tick % (Game.fps * 1) == 0) {
-            getId('upgradesUnlocked').innerHTML = 'Upgrades unlocked: ' + Game.upgradesUnlocked + '/' + Game.upgrades.length + ' (' + Math.round(Game.upgradesUnlocked / Game.upgrades.length * 100) + '%)';
-            getId('achievementsUnlocked').innerHTML = 'Achievements unlocked: ' + Game.achievementsUnlocked + '/' + Game.achievements.length + ' (' + Math.round(Game.achievementsUnlocked / Game.achievements.length * 100) + '%)';
-        }
+        if (Game.tick % (Game.fps * 1) == 0) getId('upgradesUnlocked').innerHTML = 'Upgrades unlocked: ' + Game.upgradesUnlocked + '/' + Game.upgrades.length + ' (' + Math.round(Game.upgradesUnlocked / Game.upgrades.length * 100) + '%)';
 
         for (var i = 0; i < Game.upgrades.length; i++) {
             if (Game.upgrades[i].price > Game.money && !Game.upgrades[i].unlocked) getId('upgrade'.concat(i + 1)).style.backgroundColor = '#ff4747' //'#FF3333'; //red
@@ -2244,7 +2342,7 @@ Game.UIUpdate = function () {
             else {
                 getId('upgrade'.concat(i + 1)).style.display = 'block';
             }
-            if (Game.tick % (Game.fps * 1) == 0) Game.updateTooltip('#upgrade' + (i + 1), '<div>' + Game.upgrades[i].name + (Game.upgrades[i].multiple ? ' <strong>Multiple use (' + Game.upgrades[i].used + ' times used)</strong>' : '') + '</div><div>' + Game.upgrades[i].desc + '</div><div class="money-bg"><strong>' + Beautify(Game.upgrades[i].price) + '<div>');
+            if (Game.tick % (Game.fps * 1) == 0) Game.updateTooltip('#upgrade' + (i + 1), '<div>' + Game.upgrades[i].name + (Game.upgrades[i].multiple ? ' <strong>Multiple use (used ' + Game.upgrades[i].used + ' times)</strong>' : '') + '</div><div>' + Game.upgrades[i].desc + '</div><div class="money-bg"><strong>' + Beautify(Game.upgrades[i].price) + '<div>');
         }
     }
 
@@ -2265,15 +2363,18 @@ Game.UIUpdate = function () {
 
     //LOTTERY
     if (getId('lottery').style.display == 'block') {
-        getId('lottery-info').innerHTML = 'Enter <strong>5</strong> numbers that range from <strong>1</strong> to <strong>' + Game.lottery.numberRange + '</strong>';
+        getId('lottery-info').innerHTML = 'Enter <strong>5</strong> numbers ranging from <strong>1</strong> to <strong>' + Game.lottery.numberRange + '</strong>';
         getId('lottery-pool').innerHTML = 'Lottery pool: <strong>$' + Beautify(Game.lottery.pool) + '</strong>';
-        getId('ticket-price').innerHTML = 'Ticket price: <strong>$' + Beautify(Game.lottery.ticket) + '</strong>';
+        getId('ticket-price').innerHTML = '<strong>$' + Beautify(Game.lottery.ticket) + '</strong>'; //zrobic co 1 sec i nizej
+		if(getId('lottery-custom-price-input').value != '' && isNumeric(getId('lottery-custom-price-input').value))
+			getId('lottery-custom-price-percentage').innerHTML = ' (' + Math.round(getId('lottery-custom-price-input').value / Game.lottery.ticket * 100) + '% of the regular price)';
     }
 
 
     //STOCK MARKET
     if (getId('stockmarket').style.display == 'block') {
         if (Game.tick % (Game.fps * 1) == 0) {
+			getId('stockmarket-remaining-time').innerHTML = 'Time until stock market update: <strong class="clock-bg">' + timeStamp(Game.stockmarket.remainingTime) + '</strong>';
             $('#stockmarket-table .share').each(function (i) {
                 $(this).children('.name').html(Game.shares[i].companyName);
                 $(this).children('.price').html('$' + Beautify(Game.shares[i].price));
@@ -2285,15 +2386,15 @@ Game.UIUpdate = function () {
             table.addClass('stockmarket-table');
 
             if (shares.length > 0) {
-                table.append('<th>Company name</th><th>Current Price</th><th>Change</th><th>Amount</th><th>Money invested</th><th>Profit</th><th>Profit Percentage</th><th>Sell</th><th>Sell all</th>');
+                table.append('<th>Company name</th><th>Current Price</th><th>Change</th><th>Owned</th><th>Money invested</th><th>Profit</th><th>Sell</th><th>Sell all</th>');
                 $.each(Game.GetMyShares(), function (i) {
                     table.append('<tr><td>' + shares[i].companyName + '</td>' +
                         '<td>$' + Beautify(shares[i].price) + '</td>' +
                         '<td class=' + (Game.CalculateSharePriceChange(shares[i]) > 0 ? 'increase-bg' : 'decrease-bg') + '>' + Game.CalculateSharePriceChange(shares[i]) + '%</td>' +
-                        '<td>' + shares[i].amount + '</td>' +
+                        '<td>' + Beautify(shares[i].owned) + '</td>' +
                         '<td>$' + Beautify(shares[i].invested) + '</td>' +
-                        '<td class=' + (shares[i].amount * shares[i].price - shares[i].invested > 0 ? 'increase-bg' : 'decrease-bg') +'>$' + Beautify(shares[i].amount * shares[i].price - shares[i].invested) + '</td>' +
-                        '<td class=' + (Game.CalculateShareProfitPercentage(shares[i]) > 0 ? 'increase-bg' : 'decrease-bg') +'>' + Game.CalculateShareProfitPercentage(shares[i]) + '%</td>' +
+                        '<td class=' + (shares[i].owned * shares[i].price - shares[i].invested > 0 ? 'increase-bg' : 'decrease-bg') +'>$' + Beautify(shares[i].owned * shares[i].price - shares[i].invested) + ' (' + Game.CalculateShareProfitPercentage(shares[i]) + '%)</td>' +
+                        //'<td class=' + (Game.CalculateShareProfitPercentage(shares[i]) > 0 ? 'increase-bg' : 'decrease-bg') +'>' + Game.CalculateShareProfitPercentage(shares[i]) + '%</td>' +
                         '<td><button class="sell" data-id=' + shares[i].id + '>Sell</button></td>' +
                         '<td><button class="sell-all" data-id=' + shares[i].id + '>Sell all</button></td></tr>');
                 });
@@ -2332,25 +2433,26 @@ Game.UIUpdate = function () {
         statistics[6].innerHTML = Game.resetCount;
         statistics[7].innerHTML = '$' + Beautify(Game.spentOnUpgrades);
         statistics[8].innerHTML = Game.bonusCount;
-        statistics[9].innerHTML = '$' + Beautify(Game.bank.difference);
-        statistics[10].innerHTML = Beautify(Game.bank.moneyCap) + '%';
-        statistics[11].innerHTML = '$' + Beautify(Game.moneySpentOnTax);
-        statistics[12].innerHTML = Beautify(Game.lottery.timesWon);
-        statistics[13].innerHTML = Beautify(Game.lottery.timesLost);
-        statistics[14].innerHTML = Game.lottery.ratio.toFixed(0) + '%';
-        statistics[15].innerHTML = '$' + Beautify(Game.lottery.balance);
-        statistics[16].innerHTML = '$' + Beautify(Game.lottery.ticketsCost);
+		statistics[9].innerHTML = Game.ultraBonusCount;
+        statistics[10].innerHTML = '$' + Beautify(Game.bank.difference);
+        statistics[11].innerHTML = Beautify(Game.bank.moneyCap) + '%';
+        statistics[12].innerHTML = '$' + Beautify(Game.moneySpentOnTax);
+        statistics[13].innerHTML = Beautify(Game.lottery.timesWon);
+        statistics[14].innerHTML = Beautify(Game.lottery.timesLost);
+        statistics[15].innerHTML = Game.lottery.ratio.toFixed(0) + '%';
+        statistics[16].innerHTML = '$' + Beautify(Game.lottery.balance);
+        statistics[17].innerHTML = '$' + Beautify(Game.lottery.ticketsCost);
 
         for (var i = 0; i < Game.lottery.scores.length; i++) {
-            statistics[17 + i].innerHTML = Game.lottery.scores[i];
+            statistics[18 + i].innerHTML = Game.lottery.scores[i];
         }
 
-        statistics[22].innerHTML = Beautify(Game.buildingsAmount);
-        statistics[23].innerHTML = '$' + Beautify(Game.workers.salaryPaid);
-        statistics[24].innerHTML = '$' + Beautify(Game.workers.cumulativeIncome);
-        statistics[25].innerHTML = '$' + Beautify(Game.workers.cumulativeGains);
+        statistics[23].innerHTML = Beautify(Game.buildingsAmount);
+        statistics[24].innerHTML = '$' + Beautify(Game.workers.salaryPaid);
+        statistics[25].innerHTML = '$' + Beautify(Game.workers.cumulativeIncome);
+        statistics[26].innerHTML = '$' + Beautify(Game.workers.cumulativeGains);
 
-        var counter = 26;
+        var counter = 27;
 
         for (var i = 0; i < Game.buildings.length; i++) {
             statistics[counter].innerHTML = '$' + Beautify(Game.buildings[i].cumulativeIncome);
@@ -2362,7 +2464,10 @@ Game.UIUpdate = function () {
 
     //ACHIEVEMENTS
     if (getId('achievements').style.display == 'block') {
-        if (Game.tick % (Game.fps * 1) == 0) getId('achievementsInfo').innerHTML = Game.achievementsUnlocked > 0 ? 'All achievements earned during gameplay: ' : 'No achievements unlocked so far';
+        if (Game.tick % (Game.fps * 1) == 0) {
+			getId('achievementsInfo').innerHTML = Game.achievementsUnlocked > 0 ? 'All achievements earned during gameplay: ' : 'No achievements unlocked so far';
+			getId('achievementsUnlocked').innerHTML = 'Achievements unlocked: ' + Game.achievementsUnlocked + '/' + Game.achievements.length + ' (' + Math.round(Game.achievementsUnlocked / Game.achievements.length * 100) + '%)';
+		}
 
         for (var i = 0; i < Game.achievements.length; i++) {
             if (Game.achievements[i].unlocked) getId('achievement'.concat(i + 1)).style.display = 'block';
@@ -2402,43 +2507,40 @@ LOGIC
 ==================================================*/
 
 Game.Logic = function () {
-    UpdateIncome = function () {
-        var accumulatedIncome = 0;
+	var accumulatedIncome = 0;
 
-        for (var i = 0; i < Game.buildings.length; i++) {
-            accumulatedIncome += (Game.buildings[i].baseIncome * Math.pow(1.035, Game.buildings[i].tier) * (Math.pow(1.05, Game.buildings[i].amount) - 1)) / (0.05);
-            Game.buildings[i].cumulativeIncome = Game.subtractTax(((Game.buildings[i].baseIncome * Math.pow(1.035, Game.buildings[i].tier) * (Math.pow(1.05, Game.buildings[i].amount) - 1)) / 0.05) * Game.incomeMultiplier / 100);
-        }
-        accumulatedIncome += ((Game.workers.baseIncome * Game.workers.efficiency * (Math.pow(1.05, Game.workers.amount) - 1)) / (0.05)) / 100;
+	for (var i = 0; i < Game.buildings.length; i++) {
+		accumulatedIncome += (Game.buildings[i].baseIncome * Math.pow(1.035, Game.buildings[i].tier) * (Math.pow(1.05, Game.buildings[i].amount) - 1)) / (0.05);
+		Game.buildings[i].cumulativeIncome = Game.subtractTax(((Game.buildings[i].baseIncome * Math.pow(1.035, Game.buildings[i].tier) * (Math.pow(1.05, Game.buildings[i].amount) - 1)) / 0.05) * Game.incomeMultiplier / 100);
+	}
+	accumulatedIncome += ((Game.workers.baseIncome * Game.workers.efficiency * (Math.pow(1.05, Game.workers.amount) - 1)) / (0.05)) / 100;
 
-        if (Game.bonus) Game.moneyIncome = Game.subtractTax((accumulatedIncome * Game.incomeMultiplier / 100) * (Game.ultraBonus ? Game.ultraBonusMultiplier : Game.bonusMultiplier));
-        else
-            Game.moneyIncome = Game.subtractTax(accumulatedIncome * Game.incomeMultiplier / 100);
+	if (Game.bonus) Game.moneyIncome = Game.subtractTax((accumulatedIncome * Game.incomeMultiplier / 100) * (Game.ultraBonus ? Game.ultraBonusMultiplier : Game.bonusMultiplier));
+	else
+		Game.moneyIncome = Game.subtractTax(accumulatedIncome * Game.incomeMultiplier / 100);
 
-        Game.rawIncome = accumulatedIncome * Game.incomeMultiplier / 100;
-    }
+	Game.rawIncome = accumulatedIncome * Game.incomeMultiplier / 100;
 
     for (var i = 0; i < Game.buildings.length; i++) {
         Game.buildings[i].price = Game.addTax(subtractPercent(Math.pow(1.15, Game.buildings[i].amount) * Game.buildings[i].basePrice, Game.BuildingsPercents()))
         Game.buildings[i].income = Game.subtractTax(Math.pow(1.05, Game.buildings[i].amount) * Game.buildings[i].baseIncome * Math.pow(1.035, Game.buildings[i].tier));
     }
 
-    UpdateIncome();
-
     //LOTTERY
 
     Game.lottery.ratio = Game.lottery.timesLost + Game.lottery.timesWon == 0 ? 0 : (Game.lottery.timesWon / (Game.lottery.timesLost + Game.lottery.timesWon) * 100);
-    Game.lottery.pool = (1 + (Game.bonusMultiplier / 100)) * Game.lottery.poolMultiplier * (Game.rawIncome * 216000) + (Game.moneyEarned / 100) + (Game.bank.difference / 100) + (Game.lottery.balance / 100);
-    Game.lottery.ticket = Game.lottery.pool / 13377;
+    Game.lottery.pool = (1 + (Game.bonusMultiplier / 100)) * Game.lottery.poolMultiplier * (Game.rawIncome * 500000) + (Game.moneyEarned / 100) + (Game.bank.difference / 20) + (Game.lottery.balance / 20);
+    Game.lottery.ticket = 0.0003 * Game.lottery.pool / 100;
 
     //UPGRADES PRICING
     for (var i = 0; i < Game.upgrades.length; i++) {
         if (!Game.upgrades[i].multiple) Game.upgrades[i].price = Game.addTax(subtractPercent(Game.upgrades[i].basePrice, Game.UpgradesPercents()));
         switch (Game.upgrades[i].name) {
             case 'Restoration': Game.upgrades[i].price = Game.addTax(subtractPercent(Game.upgrades[i].basePrice * Math.pow(1.20, Game.upgrades[i].used), Game.UpgradesPercents())); break;
+			case 'Use the whip': Game.upgrades[i].price = Game.addTax(subtractPercent(Game.upgrades[i].basePrice * Math.pow(1.20, Game.upgrades[i].used), Game.UpgradesPercents())); break;
             case 'Tax Be Gone': Game.upgrades[i].price = Game.addTax(subtractPercent(Game.upgrades[i].basePrice * Math.pow(1.20, Game.upgrades[i].used), Game.UpgradesPercents())); break;
             case 'Mysterious upgrade': Game.upgrades[i].price = Game.addTax(subtractPercent(Game.upgrades[i].basePrice * Math.pow(1.05, Game.upgrades[i].used), Game.UpgradesPercents())); break;
-            case 'Bonus on demand': Game.upgrades[i].price = Game.addTax(subtractPercent(Game.upgrades[i].basePrice * Math.pow(1.04, Game.upgrades[i].used), Game.UpgradesPercents())); break;
+            case 'Bonus on demand': Game.upgrades[i].price = Game.addTax(subtractPercent(Game.upgrades[i].basePrice * Math.pow(1.10, Game.upgrades[i].used), Game.UpgradesPercents())); break;
         }
     }
 
@@ -2446,14 +2548,14 @@ Game.Logic = function () {
     else
         Game.GetUpgrade('Bonus on demand').disabled = false;
 
-    document.title = '$' + Beautify(Game.money) + (Game.bonus ? ' (B)' : '');
+    document.title = '$' + Beautify(Game.money) + (Game.bonus ? (Game.ultraBonus ? ' (UB)' : ' (B)') : '');
 
     var cumulativeGains = 0;
     for (var i = 0; i < Game.buildings.length; i++) {
         Game.buildings[i].cumulativeGains += Game.buildings[i].cumulativeIncome * (Game.bonus ? (Game.ultraBonus ? Game.ultraBonusMultiplier : Game.bonusMultiplier) : 1) / Game.fps;
-        cumulativeGains += Game.buildings[i].cumulativeGains;
-        cumulativeGains += Game.workers.cumulativeGains;
+        cumulativeGains += Game.buildings[i].cumulativeGains;    
     }
+	cumulativeGains += Game.workers.cumulativeGains;
     Game.cumulativeGains = cumulativeGains;
 
     //WORKERS RELATED
@@ -2516,6 +2618,7 @@ Game.Logic = function () {
 
     if (!Game.GetUpgrade('The real hellish upgrade').hidden // ZROBIC TO W ODBLOKOWYWANIU UKRYTYCH UPGRADOW
         || !Game.GetUpgrade('Jackpot').hidden 
+		|| !Game.GetUpgrade('Faster than light #7').hidden 
         || !Game.GetUpgrade('Final bonus booster').hidden
         || !Game.GetUpgrade('Eternal bonus').hidden
         || !Game.GetUpgrade('Mysterious upgrade').hidden
@@ -2525,6 +2628,7 @@ Game.Logic = function () {
 
     //HIDDEN UPGRADES UNLOCKING
     if (Game.Unlocked('Wrecking enhancer #5') && Game.moneyEarned >= 666666666666666666) Game.Unhide('The real hellish upgrade');
+	if (Game.ultraBonusCount >= 30) Game.Unhide('Faster than light #7');
     if (Game.lottery.timesWon >= 777) Game.Unhide('Jackpot');
     if (Game.lottery.timesWon >= 3000) Game.Unhide('Greater chance #4');
     if (Game.lottery.timesWon + Game.lottery.timesLost >= 1000 && Game.playingTime.days >= 5) Game.Unhide('No limits');
@@ -2533,46 +2637,40 @@ Game.Logic = function () {
     if (Game.bonusCount >= 1500 && Game.Unlocked('Final bonus booster') && Game.moneyEarned >= 666666666666666666) Game.Unhide('Eternal bonus');
     if (Game.moneyEarned >= 1000000000000) Game.Unhide('Mysterious upgrade');
 
-    //MEASURING TIME PLAYED
-    workersEfficiency = function () {
-        Game.workers.pay = Game.workers.cumulativeGains * 0.10;
-        var efficiency = Math.round(Game.workers.salaryPaid / Game.workers.pay * 100) > 0 ? Math.round(Game.workers.salaryPaid / Game.workers.pay * 100) : 1;
-        if (efficiency > Game.workers.maxEfficiency) {
-            Game.workers.efficiency = Game.workers.maxEfficiency;
-        }
-        else {
-            Game.workers.efficiency = efficiency;
-        }
+    //WORKERS EFFICIENCY
+	Game.workers.pay = Game.workers.cumulativeGains * 0.10;
+	var efficiency = Game.GetUpgrade('Use the whip').disabled ?  Game.workers.maxEfficiency : (Math.round(Game.workers.salaryPaid / Game.workers.pay * 100) > 0 ? Math.round(Game.workers.salaryPaid / Game.workers.pay * 100) : 1);
+	if (efficiency > Game.workers.maxEfficiency) {
+		Game.workers.efficiency = Game.workers.maxEfficiency;
+	}
+	else {
+		Game.workers.efficiency = efficiency;
+	}
 
-        if (efficiency < Game.workers.maxEfficiency) Game.workers.reqMoney = Game.workers.pay * (Game.workers.maxEfficiency - efficiency) / 100;
-        else
-            Game.workers.reqMoney = 0;
-    }
+	if (efficiency < Game.workers.maxEfficiency) Game.workers.reqMoney = Game.workers.pay * (Game.workers.maxEfficiency - efficiency) / 100;
+	else
+		Game.workers.reqMoney = 0;
 
-    workersEfficiency();
+	//MEASURING TIME PLAYED
+	var now = new Date();
 
-    measurePlayingTime = function () {
-        var now = new Date();
+	Game.playingTime.diff = now - Game.startTime;
+	Game.playingTime.allDays = Math.floor(Game.playingTime.diff / 1000 / 60 / 60 / 24);
+	Game.playingTime.allHours = Math.floor(Game.playingTime.diff / 1000 / 60 / 60);
+	Game.playingTime.allMinutes = Math.floor(Game.playingTime.diff / 1000 / 60);
+	Game.playingTime.days = Math.floor(Game.playingTime.diff / 1000 / 60 / 60 / 24);
+	Game.playingTime.diff -= Game.playingTime.days * 1000 * 60 * 60 * 24;
 
-        Game.playingTime.diff = now - Game.startTime;
-        Game.playingTime.allDays = Math.floor(Game.playingTime.diff / 1000 / 60 / 60 / 24);
-        Game.playingTime.allHours = Math.floor(Game.playingTime.diff / 1000 / 60 / 60);
-        Game.playingTime.allMinutes = Math.floor(Game.playingTime.diff / 1000 / 60);
-        Game.playingTime.days = Math.floor(Game.playingTime.diff / 1000 / 60 / 60 / 24);
-        Game.playingTime.diff -= Game.playingTime.days * 1000 * 60 * 60 * 24;
+	Game.playingTime.hours = Math.floor(Game.playingTime.diff / 1000 / 60 / 60);
+	Game.playingTime.diff -= Game.playingTime.hours * 1000 * 60 * 60;
 
-        Game.playingTime.hours = Math.floor(Game.playingTime.diff / 1000 / 60 / 60);
-        Game.playingTime.diff -= Game.playingTime.hours * 1000 * 60 * 60;
+	Game.playingTime.minutes = Math.floor(Game.playingTime.diff / 1000 / 60);
+	Game.playingTime.diff -= Game.playingTime.minutes * 1000 * 60;
 
-        Game.playingTime.minutes = Math.floor(Game.playingTime.diff / 1000 / 60);
-        Game.playingTime.diff -= Game.playingTime.minutes * 1000 * 60;
-    }
-
-    measurePlayingTime();
 
     //BONUS
 
-    if (Game.bonus) {
+    if (Game.bonus) { //FIX
         if (Game.bonusTimeRemaining <= 0) {
             Game.bonusTimeRemaining = Game.bonusTime;
             Game.bonus = false;
@@ -2596,9 +2694,27 @@ Game.Logic = function () {
     }
 
     if (Game.bank.loanRemainingTime <= 0) {
-        var money = Game.bank.loanDebt * 0.25;
+        var money = Game.bank.borrowedMoney * 0.25;
         Game.bank.payback(money);
         Game.bank.loanRemainingTime = Game.bank.loanTime;
+    }
+	
+	if (Game.stockmarket.remainingTime <= 0) {
+		for (var i = 0; i < Game.shares.length; i++) {
+            var rand = getRandom(0, 1);
+			var change = getRandom(Game.shares[i].minChangePercent, Game.shares[i].maxChangePercent);
+            var increase = rand == 0 ? true : false;
+            if (increase) {
+                Game.shares[i].lastPrice = Game.shares[i].price;
+                Game.shares[i].price = Game.shares[i].price * (100 + change) / 100 > Game.shares[i].maxPrice ? Game.shares[i].maxPrice : Game.shares[i].price * (100 + change) / 100;
+            }
+            else {
+                Game.shares[i].lastPrice = Game.shares[i].price;
+                Game.shares[i].price = Game.shares[i].price * (100 - change) / 100 < Game.shares[i].minPrice ? Game.shares[i].minPrice : Game.shares[i].price * (100 - change) / 100;
+            }
+            Game.shares[i].timeOn++;
+        }
+        Game.stockmarket.remainingTime = Game.stockmarket.updateTime;
     }
 
     Game.bank.maxLoan = (Game.rawIncome * 216000) + (Game.moneyEarned / 100) + (Game.bank.difference / 100) + (Game.lottery.balance / 100);

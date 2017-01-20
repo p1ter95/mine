@@ -128,13 +128,17 @@ body {
     overflow: hidden;
 }
 
+.content h3:nth-child(2) {
+	margin-top: 0;
+}
+
 .tabs
 {
 	float: left;
+	width: 20%;
 	margin: 0;
 	padding: 0;
     list-style-type: none;
-	display: inline;
     box-shadow: 2px 2px 30px 1px rgba(0, 0, 0, 0.5);
 }
 
@@ -150,8 +154,8 @@ body {
 
 .tabs li a
 {
-    display: inline-block;
-	width: 200px;
+    display: block;
+	width: auto;
     text-decoration: none;
     position: relative;
 	padding: 8px;
@@ -201,49 +205,54 @@ body {
 	opacity: 1;
 }
 
-.tabs a div {
+.tabs a  .tabs-bg {
     padding: 10px 0 10px 40px;
     background: 0 center no-repeat;
+	height: 38px;
 }
 
-.tabs .mining div {
+.tabs .mining .tabs-bg {
     background-image: url('res/menu/mining.png');
 }
 
-.tabs .upgrades div {
+.tabs .upgrades .tabs-bg {
     background-image: url('res/menu/upgrades.png');
 }
 
-.tabs .workers div {
+.tabs .workers .tabs-bg {
     background-image: url('res/menu/workers.png');
 }
 
-.tabs .bank div {
+.tabs .bank .tabs-bg {
     background-image: url('res/menu/bank.png');
 }
 
-.tabs .lottery div {
-    background-image: url('res/menu/lottery.png');
+.tabs .lottery .tabs-bg {
+    background-image: url('res/menu/dice.png');
 }
 
-.tabs .statistics div {
+.tabs .stockmarket .tabs-bg {
+    background-image: url('res/menu/stockmarket.png');
+}
+
+.tabs .statistics .tabs-bg {
     background-image: url('res/menu/stats.png');
 }
  
-.tabs .achievements div {
+.tabs .achievements .tabs-bg {
     background-image: url('res/menu/achievements.png');
 } 
 
-.tabs .options div {
+.tabs .options  .tabs-bg {
     background-image: url('res/menu/options.png');
 }
 
 .tabcontents
 {
-    position: relative;
-    left: -1px;
-	float: right;
-	width: 800px;
+	position: relative;
+	left: -1px;
+	float: left;
+	width: 80%;
     border: 1px solid black; 
     background: #21BEDE;
     border-radius: 0 3px 3px 3px;
@@ -350,7 +359,7 @@ body {
     color: red;
 }
 
-.button {
+button {
     display: inline-block;
     font-size: 13px;  
     border: 1px solid black;
@@ -363,15 +372,22 @@ body {
     vertical-align: middle;
 }
 
-.button:active {
+button:active {
 	position: relative;
 	top: 1px;
 }
 
-.button:hover {
+button:hover {
     cursor: pointer;
     background: linear-gradient(to bottom, #ffb260 0%,rgba(255,123,13,1) 100%);
 }
+
+ input[type=range] {
+	vertical-align: middle;
+	padding: 8px;
+	margin-top: 2px;
+	margin-bottom: 2px;
+ }
 
 input[type=text], input[type=number], select, option, textarea {
     border-radius: 3px;
@@ -389,17 +405,24 @@ input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
     border-color: #ff7b0d;
 }
 
-
 .input-option {
     display: block;
 }
 
-#upgradesList {
+#lottery-custom-price-input {
+	margin: 0 0 0 5px;
+}
+
+label + .input-option {
+    display: inline-block;
+}
+
+#upgrades-list {
 	float: left;
 }
 
 .upgrade {
-	background-image: url('res/upgrade-icon2.png');
+	background-image: url('res/upgrade-icon.png');
 	background-position: 50% 50%;
 	background-repeat: no-repeat;
     border: 1px solid black;
@@ -420,6 +443,12 @@ input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
 
 .active-upgrade:active {
     background-position-y: 65%;
+}
+
+.upgrades-delimiter {
+	font-weight: bold;
+	clear: left;
+	padding-top: 0.5em;
 }
 
 .stat {
@@ -461,31 +490,75 @@ input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
     background: url('res/close-icon2.png') center center no-repeat;
 }
 
+.messagebox.green {
+	border-color: #1ca032;
+    background: #96E693 url('res/tick.png') 10px 10px no-repeat;
+}
+
+.messagebox.yellow {
+	border-color: #b3b53f;
+    background: #e6e86d url('res/warning.png') 10px 10px no-repeat;
+}
+
+.messagebox.red {
+	border-color: #E33A0B;
+    background: #DE8268 url('res/error.png') 10px 10px no-repeat;
+}
+
 .messagebox .closebox:hover {
      cursor: pointer;
 }
 
-#statistics_table {
+#statistics-table {
     border-collapse: collapse;
     border: 1px solid black;
     width: 100%;
 }
 
-#statistics_table tr, td {
+#statistics-table tr, td {
     padding: 10px;
 }
 
-#statistics_table td {
+#statistics-table td {
 	width: 55%;
 }
 
-#statistics_table tr {
+#statistics-table tr {
     border-top: 1px solid black;
 }
 
-#statistics_table tr:hover {
+#statistics-table tr:hover {
     background: white;
 	/*box-shadow: inset 0px 0px 30px 2px rgba(50, 50, 50, 0.75)*/;
+}
+
+.stockmarket-table {
+    border-collapse: collapse;
+    border: 1px solid black;
+    width: 100%;
+}
+
+.stockmarket-table td {
+    padding: 5px;
+}
+
+.stockmarket-table td {
+	text-align: center;
+	border: 1px solid black;
+}
+
+.stockmarket-table th {
+    border: 1px solid black;
+}
+
+.stockmarket-table  .increase-bg {
+	background: url('res/arrow-up.png') 2px 50% no-repeat;
+	padding-left: 18px;
+}
+
+.stockmarket-table  .decrease-bg {
+	background: url('res/arrow-down.png') 2px 50% no-repeat;
+	padding-left: 18px;
 }
 
 .trValue {
@@ -500,15 +573,37 @@ input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
     background: #21BEDE;
 }
 
-.num {
+.lottery-number {
     width: 40px;
     margin: 0 10px 0 0;
     text-align: center;
 }
 
-#random_numbers {
+#lottery-numbers {
     font-size: 35px;
 	word-spacing: 0.35em;
     font-weight: bold;
 	text-shadow: 0 0 7px white;
+}
+
+@media only screen and (max-width: 1000px) {
+    #container {
+        width: 100%;
+    }
+	
+	.tabs {
+        width: 7.5%;
+    }
+	.tabcontents {
+		width: 92.5%;
+	}
+	
+	.tabs a .tabs-bg div{
+        display: none;
+    }
+	
+	.upgrade {
+		width: 40px;
+		height: 40px;
+	}
 }

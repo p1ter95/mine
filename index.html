@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html>
 <head>
     <title></title>
@@ -6,7 +6,8 @@
     <link href='http://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'>
     <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="tabcontent.js" type="text/javascript"></script>
-    <script src="script_shares.js" type="text/javascript"></script>
+    <script src="script.js" type="text/javascript"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
@@ -25,138 +26,202 @@
 
         <div id="inner">
             <ul class="tabs" data-persist="true">
-                <li class="mining"><a href="#mining"><div>Mine</div></a></li>
-                <li class="upgrades"><a href="#upgrades"><div>Upgrades</div></a></li>
-                <li class="workers"><a href="#workers"><div>Workers</div></a></li>
-			    <li class="bank"><a href="#bank"><div>Bank</div></a></li>
-                <li class="lottery"><a href="#lottery"><div>Lottery</div></a></li>
-                <li class="stockmarket"><a href="#stockmarket"><div>Stock market</div></a></li>
-                <li class="statistics"><a href="#statistics"><div>Statistics</div></a></li>
-                <li class="achievements"><a href="#achievements"><div>Achievements</div></a></li>
-                <li class="options"><a href="#options"><div>Options</div></a></li>
+                <li class="mining">
+					<a href="#mining">
+						<div class="tabs-bg"><div>Mine</div></div>
+					</a>
+				</li>
+                <li class="upgrades">
+					<a href="#upgrades">
+						<div class="tabs-bg"><div>Upgrades</div></div>
+					</a>
+				</li>
+                <li class="workers">
+					<a href="#workers">
+						<div class="tabs-bg"><div>Workers</div></div>
+					</a>
+				</li>
+			    <li class="bank">
+					<a href="#bank">
+						<div class="tabs-bg"><div>Bank</div></div>
+					</a>
+				</li>
+                <li class="lottery">
+					<a href="#lottery">
+						<div class="tabs-bg"><div>Lottery</div></div>
+					</a>
+				</li>
+                <li class="stockmarket">
+					<a href="#stockmarket">
+						<div class="tabs-bg"><div>Stock market</div></div>
+					</a>
+				</li>
+                <li class="statistics">
+					<a href="#statistics">
+						<div class="tabs-bg"><div>Statistics</div></div>
+					</a>
+				</li>
+                <li class="achievements">
+					<a href="#achievements">
+						<div class="tabs-bg"><div>Achievements</div></div>
+					</a>
+				</li>
+                <li class="options">
+					<a href="#options">
+						<div class="tabs-bg"><div>Options</div></div>
+					</a>
+				</li>
             </ul>
 
-        <div class="tabcontents">
+			<div class="tabcontents">
 
-            <div id="mining" class="view">       
-                <h1>Mining</h1>
-                <div class="content">
-                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                </div>
+				<div id="mining" class="view">       
+					<h1>Mining</h1>
+					<div class="content">
+						<div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+					</div>
+				</div>
+
+				<div id="upgrades" class="view">
+					<h1>Upgrades</h1>
+					<div class="content">
+						<div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+						<div id="upgradesUnlocked" class="unlockedPercentage"></div>
+						<div id="upgrades-list"></div>
+					</div>
+				</div>
+				
+				<div id="workers" class="view">
+					<h1>Workers</h1>
+					<div class="content">
+						<div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+							<button id="buy-worker">Hire a worker</button>
+							<button id="buy-max-workers">Hire max workers</button>
+							<button id="sell-worker">Fire a worker</button>
+							<button id="sell-all-workers">Fire all workers</button>
+							<div id="workers-amount"></div>
+							<div id="workers-price"></div>
+							<div id="workers-req-money"></div>
+							<div id="workers-salary-paid"></div>
+							<div id="workers-efficiency"></div>  
+							<input id="workers-salary" type="range">  
+							<span class="slider-value"></span>	
+							<button id="workers-pay">Pay</button>
+							<button id="workers-pay-max">Pay Max</button>
+					</div>
+				</div>
+
+				<div id="bank" class="view">
+					<h1>Bank</h1>
+					<div class="content">
+						<div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+						<h3>Deposit</h3>
+						<div id="bank-stored-money"></div>
+						<div id="bank-money-rate"></div>
+						<div id="bank-money-increase"></div>
+						<div id="bank-cap"></div>
+						<input id="bank-input" type="range">
+						<span class="slider-value"></span>
+						<button id="deposit">Deposit</button>
+						<button id="withdraw">Withdraw</button>  
+						<button id="deposit-all">Deposit all money</button>
+						<button id="withdraw-all">Withdraw all money</button>     
+						<h3>Loans</h3>                        
+						<div id="loan-debt"></div>
+						<div id="loan-rate"></div>
+						<div id="max-loan"></div>
+						<div id="loan-remaining-time"></div>                 
+						<div>
+							<input id="loan-amount" type="range">
+							<span class="slider-value"></span>							
+							<button id="borrow">Borrow</button>  
+							<button id="borrow-max">Borrow Max</button>
+						</div>						
+						<div>
+							<input id="payback-amount" type="range">
+							<span class="slider-value"></span>
+							<button id="payback">Payback</button>    
+							<button id="payback-all">Pay all money back</button>                      
+						</div>
+
+					</div>
+				</div>
+
+				<div id="lottery" class="view">
+					<h1>Lottery</h1>
+					<div class="content">
+						<div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+						<div id="lottery-info"></div>
+						<div id="lottery-pool"></div>
+						<div>
+							<input id="lottery-regular-price" name="lottery-ticket-price" type="radio"/>
+							<label for="lottery-regular-price">Regular ticket price: <span id="ticket-price"></span></label>
+						</div>
+						<div>
+							<input id="lottery-custom-price" name="lottery-ticket-price" type="radio"/>
+							<label for="lottery-custom-price">Custom ticket price</label><input id="lottery-custom-price-input" type="number"/>
+							<button id="lottery-max-custom-price">Max money</button>
+							<span id="lottery-custom-price-percentage"></span>
+						</div>
+						<div id="lottery-numbers"></div>
+						<input class="lottery-number" type="text"/>
+						<input class="lottery-number" type="text"/>
+						<input class="lottery-number" type="text"/>
+						<input class="lottery-number" type="text"/>
+						<input class="lottery-number" type="text"/>
+						<button id="play-lottery">Play</button>
+					</div>
+				</div>
+
+				<div id="stockmarket" class="view">
+					<h1>Stock market</h1>
+					<div class="content">
+						<div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+						<div id="stockmarket-remaining-time"></div>
+					</div>
+				</div>
+
+				<div id="statistics" class="view">
+					<h1>Statistics</h1>
+					<div class="content">
+						<div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+					</div>
+				</div>
+
+				<div id="achievements" class="view">
+					<h1>Achievements</h1>
+					<div class="content">
+						<div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+						<div>
+							<span id="achievementsInfo"></span>
+							<span id="achievementsUnlocked" class="unlockedPercentage"></span>
+						</div>
+					</div>
+				</div>
+
+				<div id="options" class="view">
+					<h1>Options</h1>
+					<div class="content">
+						<div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
+						<button id="save-game">Save Game</button>
+						<button id="export-game">Export Game</button>
+						<button id="import-game">Import Game</button>
+						<button id="reset">Reset</button>
+						<button id="clear-save">Clear save</button>
+						<div>
+							<input class="input-option" id="option-fps" type="number"/>
+							<label for="option-auto-save">Auto-Save</label>
+							<input class="input-option" id="option-autosave" type="checkbox"/>
+							<input class="input-option" id="option-autosave-time" type="number"/>
+							<select class="input-option" id="option-numbers">
+								<option value="0">Raw numbers</option>
+								<option value="1">Words</option>
+							</select>
+						</div>
+					</div>
+				</div>
             </div>
 
-            <div id="upgrades" class="view">
-                <h1>Upgrades</h1>
-                <div class="content">
-                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-					<div id="upgradesUnlocked" class="unlockedPercentage"/></div>
-                    <div id="upgradesList"></div>
-                </div>
-            </div>
-
-            <div id="workers" class="view">
-                <h1>Workers</h1>
-                <div class="content">
-                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                        <button id="buy-worker">Hire a worker</button>
-                        <button id="buy-max-workers">Hire max workers</button>
-                        <button id="sell-worker">Fire a worker</button>
-                        <button id="sell-all-workers">Fire all workers</button>
-                        <div id="workers-amount"></div>
-                        <div id="workers-price"></div>
-                        <div id="workers-req-money"></div>
-                        <div id="workers-salary-paid"></div>
-                        <div id="workers-efficiency"></div>  
-                        <input id="workers-salary" type="text">                  
-                        <button id="workers-pay">Pay</button>
-                        <button id="workers-pay-max">Pay Max</button>
-                </div>
-            </div>
-
-			<div id="bank" class="view">
-                <h1>Bank</h1>
-                <div class="content">
-                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                    <h3>Deposit</h3>
-                    <div id="bank-stored-money"></div>
-                    <div id="bank-money-rate"></div>
-                    <div id="bank-money-increase"></div>
-                    <div id="bank-cap"></div>
-                    <input id="bank-input" type="text">
-                    <button id="deposit">Deposit</button>
-                    <button id="withdraw">Withdraw</button>  
-                    <button id="deposit-all">Deposit all money</button>
-                    <button id="withdraw-all">Withdraw all money</button>     
-                    <h3>Loans</h3>                        
-                    <div id="loan-debt"></div>
-                    <div id="loan-rate"></div>
-                    <div id="max-loan"></div>
-                    <div id="loan-remaining-time"></div>                 
-                    <input id="loan-amount" type="text">   
-                    <button id="borrow">Borrow</button>  
-                    <button id="borrow-max">Borrow Max</button>                
-                    <div>
-                        <input id="payback-amount" type="text">
-                        <button id="payback">Payback</button>    
-                        <button id="payback-all">Pay all money back</button>                      
-                    </div>
-
-                </div>
-            </div>
-
-            <div id="lottery" class="view">
-                <h1>Lottery</h1>
-                <div class="content">
-                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                </div>
-            </div>
-
-            <div id="stockmarket" class="view">
-                <h1>Stock market</h1>
-                <div class="content">
-                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                </div>
-            </div>
-
-            <div id="statistics" class="view">
-                <h1>Statistics</h1>
-                <div class="content">
-                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                </div>
-            </div>
-
-            <div id="achievements" class="view">
-                <h1>Achievements</h1>
-                <div class="content">
-                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                    <div>
-                        <span id="achievementsInfo"></span>
-                        <span id="achievementsUnlocked" class="unlockedPercentage"></span>
-                    </div>
-                </div>
-            </div>
-
-            <div id="options" class="view">
-                <h1>Options</h1>
-                <div class="content">
-                    <div class="messagebox"><span class="messageboxtext"></span><div class="closebox"></div></div>
-                    <button id="save-game">Save Game</button>
-                    <button id="export-game">Export Game</button>
-                    <button id="import-game">Import Game</button>
-                    <button id="reset">Reset</button>
-                    <button id="clear-save">Clear save</button>
-                    <div>
-                        <input class="input-option" id="option-fps" type="number"/>
-                        <label for="option-auto-save">Auto-Save</label>
-                        <input class="input-option" id="option-autosave" type="checkbox"/>
-                        <input class="input-option" id="option-autosave-time" type="number"/>
-                        <select class="input-option" id="option-numbers">
-                            <option value="0">Raw numbers</option>
-                            <option value="1">Words</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
  
