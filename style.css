@@ -20,13 +20,13 @@
 body {
     margin: 0;
     font: normal 15px Roboto;
-    background: #6BCAE2;
+    background: #F4F7D9;
 }
 
 * {
 	box-sizing: border-box;
     -moz-box-sizing: border-box;
-	}
+}
 
 #container {
 	width: 1000px;
@@ -79,7 +79,7 @@ body {
 	margin-top: 20px;
     border: 1px solid black;
     border-radius: 3px 3px 3px 3px;
-    background: #51A5BA;
+    background: #74755E;
     box-shadow: 2px 2px 30px 1px rgba(0, 0, 0, 0.5);
 }
 
@@ -104,19 +104,6 @@ body {
     -moz-animation: pulsate .3s infinite alternate;
     -animation: pulsate .6s infinite alternate;
     color: #ffc92b;
-}
-
-@-webkit-keyframes pulsate {
-    from { text-shadow: 0 0 10px #ffd65e; }
-    to { text-shadow: 0 0 20px #ffc92b; }
-}
-@-moz-keyframes pulsate {
-    from { box-shadow: 0 0 10px #121212; }
-    to { box-shadow: 0 0 20px #0099CC; }
-}
-@keyframes pulsate {
-    from { box-shadow: 0 0 10px #121212; }
-    to { box-shadow: 0 0 20px #0099CC; }
 }
 
 #tax {
@@ -163,7 +150,7 @@ body {
     border-bottom-width: 0;
     border-bottom-color: black;
     color: #000;
-    background: #51A5BA;
+    background: #74755E;
     /*border-radius: 3px 0 0 3px;*/
 	opacity: 0.85;
 }
@@ -183,15 +170,10 @@ body {
     padding-left: 5px;
     font-style: italic;
 }
-        
-.tabs li a:visited
-{
-    color: #000;
-}
-        
+   
 .tabs li a:hover
 {
-    background: #21BEDE;
+    background: #74754F;
 	opacity: 1;
     text-shadow: 0 0 10px white;
 }
@@ -201,8 +183,9 @@ body {
     position: relative;
     font-weight: bold;
     text-shadow: 0 0 10px white;
-    background: linear-gradient(to bottom, rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%);
+    background: linear-gradient(to bottom, rgba(72, 76, 67, 1) 0%,rgba(67, 71, 63, 1) 100%);
 	opacity: 1;
+	color: white;
 }
 
 .tabs a  .tabs-bg {
@@ -254,7 +237,7 @@ body {
 	float: left;
 	width: 80%;
     border: 1px solid black; 
-    background: #21BEDE;
+    background: #74755E;
     border-radius: 0 3px 3px 3px;
     box-shadow: 10px 2px 30px 1px rgba(0, 0, 0, 0.5);
 }
@@ -262,32 +245,33 @@ body {
 .tabcontents h1 {
     margin: 0;
     padding: 15px;
-    background: linear-gradient(to bottom, rgba(0,183,234,1) 0%,rgba(0,158,195,1) 100%);
+    background: linear-gradient(to bottom, rgba(72, 76, 67, 1) 0%,rgba(67, 71, 63, 1) 100%);
     border-bottom: 1px solid black;
 	font-size: 20px;
+	color: white;
 }
 
-.buildingItem {
+.building-item {
     border: 1px solid black;
     margin: 0 0 4px 0;
     overflow: hidden;
-    background: #AFEAAA;
+    background: #A4CFBE;
     position: relative;
 }
 
-.buildingItem:hover {
-    background: #a0e69a;
+.building-item:hover {
+    background: #9AC2B2;
 }
 
-.buildingName {
+.building-name {
     font-weight: bold;
 }
 
-.buildingInfo {
+.building-info {
     padding: 2px 6px;
 }
 
-.buildingPrice, .buildingAmount, .buildingTier {
+.building-price, .building-amount, .building-tier {
     font-size: 14px;
 }
 
@@ -299,7 +283,7 @@ body {
     text-transform: uppercase;
     margin: 0;
     width: 70px;
-    background: linear-gradient(to bottom, rgba(255,168,76,1) 0%,rgba(255,123,13,1) 100%);
+    background: linear-gradient(to bottom, rgba(75, 132, 138, 1) 0%,rgba(60, 110, 110, 1) 100%);
     vertical-align: middle;
     text-align: center;
     line-height: 81px;
@@ -310,28 +294,28 @@ body {
 }
 
 .sell-buy:hover {
-    background: linear-gradient(to bottom,#ffb260 0%,rgba(255,123,13,1) 100%);
+    background: linear-gradient(to bottom, rgba(85, 145, 145, 1) 0%,rgba(70, 120, 120, 1) 100%);
 }
 
-.buyBuilding {
+.buy-building {
     top: 0;
     bottom: 0;
     right: 210px;
 }
 
-.buyMaxBuildings {
+.buy-max-buildings {
     top: 0;
     bottom: 0;
     right: 140px;
 }
 
-.sellBuilding {
+.sell-building {
     top: 0;
     bottom: 0;
     right: 70px;
 }
 
-.sellAllBuildings {
+.sell-all-buildings {
     top: 0;
     bottom: 0;
     right: 0;
@@ -341,13 +325,14 @@ body {
     top: 0;
     bottom: 0;
     right: 280px;
-    background: linear-gradient(to bottom, #ffd65e 0%,#febf04 100%);
+    background: linear-gradient(to bottom, #f2f76c, #edf259);
     display: none;
+	width: auto;
     /*box-shadow: 0px 0px 15px 0px #febf04;*/
 }
 
 .upgrade-building:hover {
-    background: linear-gradient(to bottom, #ffdb72 0%,#febf04 100%);
+    background: linear-gradient(to bottom, #f9ff56, #f8ff44);
 }
 
 
@@ -364,7 +349,7 @@ button {
     font-size: 13px;  
     border: 1px solid black;
     padding: 10px;
-    background: linear-gradient(to bottom, rgba(255,168,76,1) 0%,rgba(255,123,13,1) 100%);
+    background: linear-gradient(to bottom, rgba(75, 132, 138, 1) 0%,rgba(60, 110, 110, 1) 100%);
     color: black;
     border-radius: 3px 3px 3px 3px;
     box-shadow:inset 0px 1px 0px 0px #fff;
@@ -379,15 +364,15 @@ button:active {
 
 button:hover {
     cursor: pointer;
-    background: linear-gradient(to bottom, #ffb260 0%,rgba(255,123,13,1) 100%);
+    background: linear-gradient(to bottom, rgba(85, 145, 145, 1) 0%,rgba(70, 120, 120, 1) 100%);
 }
 
- input[type=range] {
+input[type=range] {
 	vertical-align: middle;
 	padding: 8px;
 	margin-top: 2px;
 	margin-bottom: 2px;
- }
+}
 
 input[type=text], input[type=number], select, option, textarea {
     border-radius: 3px;
@@ -396,13 +381,13 @@ input[type=text], input[type=number], select, option, textarea {
     border: 1px solid black;
     vertical-align: middle;
     transition: border 0.3s;
-	margin-top: 2px;
-	margin-bottom: 2px;
+	margin: 3px 0;
+	height: 2.4em;
 }
 
 input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
     outline: 0;
-    border-color: #ff7b0d;
+    border-color: #A4CFBE;
 }
 
 .input-option {
@@ -422,18 +407,26 @@ label + .input-option {
 }
 
 .upgrade {
+	position: relative;
 	background-image: url('res/upgrade-icon.png');
 	background-position: 50% 50%;
 	background-repeat: no-repeat;
     border: 1px solid black;
-    font-size: 11px;
+    font-size: 18px;
+	text-align: center;
     padding: 7px;
-    margin: 10px 10px 0 0;
+    margin: 5px 5px 0 0;
 	width: 51px;
 	height: 51px;
 	float: left;	
     transition: all 0.3s ease-in-out;
     transition-property: background-color, opacity, box-shadow;
+}
+
+.upgrade div {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
 }
 
 .active-upgrade:hover {
@@ -470,7 +463,7 @@ label + .input-option {
 }
 
 .messagebox {
-    font: 18px 'Roboto';
+    font: 18px Roboto;
     border: 4px solid black;
     margin: 0 0 10px;
     padding: 8px;
@@ -515,7 +508,7 @@ label + .input-option {
     width: 100%;
 }
 
-#statistics-table tr, td {
+#statistics-table tr, #statistics-table td {
     padding: 10px;
 }
 
@@ -527,28 +520,53 @@ label + .input-option {
     border-top: 1px solid black;
 }
 
-#statistics-table tr:hover {
-    background: white;
-	/*box-shadow: inset 0px 0px 30px 2px rgba(50, 50, 50, 0.75)*/;
+#statistics-table td:first-child {
+	background: #4B848A;
+	border-right: 1px solid black;
 }
+
+/*#statistics-table td:nth-child(2) {
+	background: #A4CFBE;
+}
+
+#statistics-table td:nth-child(2):hover {
+	background: #9AC2B2;
+}*/
+.trValue {
+	background: #A4CFBE;
+    font-weight: bold;
+}
+
+.trValue:hover {
+	background: #9AC2B2;
+}
+
+/*STOCKMARKET TABLE*/
 
 .stockmarket-table {
     border-collapse: collapse;
-    border: 1px solid black;
+    /*border: 1px solid black;*/
     width: 100%;
 }
 
-.stockmarket-table td {
-    padding: 5px;
+.stockmarket-table th {
+	padding: 5px;
+    border: 1px solid black;
+	background: #4B848A;
 }
 
 .stockmarket-table td {
+	padding: 5px;
 	text-align: center;
 	border: 1px solid black;
 }
 
-.stockmarket-table th {
-    border: 1px solid black;
+.stockmarket-table tr {
+	background: #A4CFBE;
+}
+
+.stockmarket-table tr:hover {
+	background: #9AC2B2;
 }
 
 .stockmarket-table  .increase-bg {
@@ -559,18 +577,6 @@ label + .input-option {
 .stockmarket-table  .decrease-bg {
 	background: url('res/arrow-down.png') 2px 50% no-repeat;
 	padding-left: 18px;
-}
-
-.trValue {
-    font-weight: bold;
-}
-
-.tbcolor1 {
-    background: #DAE5CA;
-}
-
-.tbcolor2 {
-    background: #21BEDE;
 }
 
 .lottery-number {
@@ -591,19 +597,108 @@ label + .input-option {
         width: 100%;
     }
 	
-	.tabs {
-        width: 7.5%;
-    }
+	#upperbar {
+		overflow: auto;
+		margin-top: 0;
+		border-bottom: 0;
+		border-radius: 0;
+	}
+	
+	#inner {
+		margin: 0;
+	}
+	
+	button:not(.prompt-option) {
+		display: block;
+		margin-bottom: 3px;
+	}
+	
 	.tabcontents {
-		width: 92.5%;
+		border-radius: 0;
+	}
+	
+	.tabs li:first-child a {
+		border-radius: 0;
+	}
+	
+	.tabs li:last-child a {
+		border-radius: 0;
 	}
 	
 	.tabs a .tabs-bg div{
         display: none;
     }
 	
-	.upgrade {
+	/*.upgrade {
 		width: 40px;
 		height: 40px;
+		font-size: 14px;
+	}*/
+}
+
+@media only screen and (max-width: 720px) {
+	
+	.stockmarket-table thead {
+		display: none;
 	}
+	
+	.stockmarket-table tr {
+		display: block;
+		margin-bottom: .625em;
+	}
+	.stockmarket-table td {
+		display: block;
+		font-size: .8em;
+		text-align: right;
+		border-width: 1px 1px 0 1px;
+	}
+		
+	.stockmarket-table button {
+		display: inline-block;
+	}
+	
+	.stockmarket-table td:before {
+		content: attr(data-label);
+		float: left;
+		font-weight: bold;
+	}
+	
+	.stockmarket-table td:last-child {
+		border-bottom-width: 1px;
+	}
+	
+	.stockmarket-table  .increase-bg, .stockmarket-table  .decrease-bg {
+		
+	}
+  
+	.sell-buy {
+		position: static;
+		width: 100%;
+		box-shadow: none;
+		border-left: none;
+		border-top: 1px solid black;
+		line-height: 60px;
+	}
+	
+	.building-item {
+		margin-bottom: 7px;
+	}
+}
+
+@media only screen and (max-width: 1000px) and (orientation: portrait) {
+	.tabs {
+        width: 16%;
+    }
+	.tabcontents {
+		width: 84%;
+	}	
+}
+
+@media only screen and (max-width: 1000px) and (orientation: landscape) {
+	.tabs {
+        width: 9%;
+    }
+	.tabcontents {
+		width: 91%;
+	}	
 }
