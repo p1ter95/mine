@@ -28,6 +28,10 @@ body {
     -moz-box-sizing: border-box;
 }
 
+div, span {
+	cursor: default;
+}
+
 #container {
 	width: 1000px;
 	margin: 0 auto;
@@ -117,6 +121,10 @@ body {
 
 .content h3:nth-child(2) {
 	margin-top: 0;
+}
+
+.margin-bottom {
+	margin-bottom: 10px;
 }
 
 .tabs
@@ -257,6 +265,10 @@ body {
     overflow: hidden;
     background: #A4CFBE;
     position: relative;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .building-item:hover {
@@ -421,6 +433,10 @@ label + .input-option {
 	float: left;	
     transition: all 0.3s ease-in-out;
     transition-property: background-color, opacity, box-shadow;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .upgrade div {
@@ -523,6 +539,11 @@ label + .input-option {
 #statistics-table td:first-child {
 	background: #4B848A;
 	border-right: 1px solid black;
+}
+
+.statistics-delimeter td {
+	background-color: #A4CFBE !important;
+	font-weight: bold;
 }
 
 /*#statistics-table td:nth-child(2) {
